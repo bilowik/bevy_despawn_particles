@@ -1,0 +1,22 @@
+[package]
+name = "bevy_despawn_particles"
+version = "0.1.0"
+edition = "2021"
+license = "Unlicense"
+keywords = ["gamedev", "graphics", "bevy", "bevy_plugin"]
+categories = ["game-development"]
+authors = ["bilowik"]
+description = "An event-based system to spawn particles on death built from the targetted sprite"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = "0.10.1"
+rand = "0.8.5"
+bevy_rapier2d = { version = "0.21.0", optional = true }
+
+
+
+[features]
+rapier = ["dep:bevy_rapier2d"]
