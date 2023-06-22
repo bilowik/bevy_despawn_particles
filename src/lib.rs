@@ -50,7 +50,10 @@ impl Plugin for DespawnParticlesPlugin {
         app.add_event::<DespawnParticlesEvent>();
 
         #[cfg(not(feature = "rapier"))]
-        app.init_resource::<phys::Friction>();
+        {
+            app.init_resource::<phys::Friction>();
+            app.init_resource::<phys::Gravity>();
+        }
 
         // Register systems and systemset
         // TODO: These might need to be ordered to prevent conflicts potentially?

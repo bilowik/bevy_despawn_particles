@@ -14,6 +14,16 @@ pub struct Friction {
     pub ang: f32,
 }
 
+
+#[derive(Resource)]
+pub struct Gravity(pub Vec2);
+
+impl Default for Gravity {
+    fn default() -> Self {
+        Self(Vec2::new(0.0, -150.0))
+    }
+}
+
 impl Default for Friction {
     fn default() -> Self {
         Friction {
@@ -51,6 +61,7 @@ pub(crate) fn phys_tick(
     mut phys_timer: Local<PhysTimer>,
     time: Res<Time>,
     friction: Res<Friction>,
+    gravity: Res<Gravity>,
 ) {
     phys_timer.timer.tick(time.delta());
     if phys_timer.timer.just_finished() {
@@ -61,6 +72,11 @@ pub(crate) fn phys_tick(
             t.rotation = t.rotation * Quat::from_rotation_z(v.angvel * elapsed);
             v.linvel = v.linvel - (v.linvel * elapsed * friction.lin);
             v.angvel = v.angvel - (v.angvel * elapsed * friction.ang);
+            // Now apply gravity
+
+            v.linvel += gravity.0 * elapsed;
         }
+
+
     }
 }
