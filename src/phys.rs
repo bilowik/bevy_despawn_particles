@@ -58,7 +58,7 @@ pub(crate) fn phys_tick(
         phys_timer.last_run = time.elapsed_seconds();
         for (mut t, mut v) in query.iter_mut() {
             t.translation += (v.linvel * elapsed).extend(0.0);
-            t.rotation.z = t.rotation.z + (v.angvel * elapsed);
+            t.rotation = t.rotation * Quat::from_rotation_z(v.angvel * elapsed);
             v.linvel = v.linvel - (v.linvel * elapsed * friction.lin);
             v.angvel = v.angvel - (v.angvel * elapsed * friction.ang);
         }
