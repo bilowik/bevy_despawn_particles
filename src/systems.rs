@@ -42,6 +42,7 @@ pub fn handle_despawn_particles_event(
         lifetime,
         linear_damping,
         angular_damping,
+        mass
     } in despawn_particles_event_reader.iter() {
         if let Some(mut entity_commands) = commands.get_entity(*entity) {
             entity_commands.despawn();
@@ -165,6 +166,10 @@ pub fn handle_despawn_particles_event(
                                     linear_damping: linear_damping.get_value(),
                                     angular_damping: angular_damping.get_value(),
                                 },
+                                #[cfg(not(feature = "rapier"))]
+                                mass: mass.get_value().into(),
+                                #[cfg(feature = "rapier")]
+                                mass: AdditionalMassProperties::Mass(mass.get_value()),
                                 ..default()
                             },
                             mesh,

@@ -34,38 +34,28 @@ pub struct FadingDespawnParticle;
 #[derive(Component, Default)]
 pub struct ShrinkingDespawnParticle;
 
-#[cfg(feature = "rapier")]
 #[derive(Bundle)]
 pub struct DespawnParticleBundle {
     pub despawn_particle: DespawnParticle,
-    pub mass_properties: AdditionalMassProperties,
+    pub mass: AdditionalMassProperties,
     pub velocity: Velocity,
     pub damping: Damping,
+    #[cfg(feature = "rapier")]
     pub rigid_body: RigidBody,
 }
 
-#[cfg(feature = "rapier")]
 impl Default for DespawnParticleBundle {
     fn default() -> Self {
         Self {
             despawn_particle: Default::default(),
-            mass_properties: AdditionalMassProperties::Mass(1.0),
+            #[cfg(not(feature = "rapier"))]
+            mass: 1.0.into(),
+            #[cfg(feature = "rapier")]
+            mass: AdditionalMassProperties::Mass(500.0),
             velocity: Default::default(),
-            damping: Damping {
-                linear_damping: 2.0,
-                angular_damping: 0.5,
-            },
-            rigid_body: Default::default(),
+            damping: Default::default(),
+            #[cfg(feature = "rapier")]
+            rigid_body: RigidBody::Dynamic,
         }
     }
 }
-
-
-#[cfg(not(feature = "rapier"))]
-#[derive(Bundle, Default)]
-pub struct DespawnParticleBundle {
-    pub despawn_particle: DespawnParticle,
-    pub velocity: Velocity,
-    pub damping: Damping,
-}
-

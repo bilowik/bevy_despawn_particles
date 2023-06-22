@@ -10,6 +10,7 @@ pub struct DespawnParticlesEvent {
     pub linear_damping: Property<f32>,
     pub angular_damping: Property<f32>,
     pub lifetime: Property<f32>,
+    pub mass: Property<f32>,
     pub ignore_parent_phys: bool,
 }
 
@@ -22,6 +23,7 @@ pub struct DespawnParticlesEventBuilder {
     pub linear_damping: Property<f32>,
     pub angular_damping: Property<f32>,
     pub lifetime: Property<f32>,
+    pub mass: Property<f32>,
     pub ignore_parent_phys: bool,
 }
 
@@ -42,6 +44,7 @@ impl DespawnParticlesEventBuilder {
             lifetime: 1.0.into(),
             linear_damping: Default::default(),
             angular_damping: Default::default(),
+            mass: Default::default(),
             ignore_parent_phys: true,
         }
     }
@@ -80,6 +83,10 @@ impl DespawnParticlesEventBuilder {
         self
     }
 
+    pub fn with_mass<T: Into<Property<f32>>>(mut self, v: T) -> Self {
+        self.mass = v.into();
+        self
+    }
     pub fn build(self) -> DespawnParticlesEvent {
         DespawnParticlesEvent {
             entity: self.entity,
@@ -88,6 +95,7 @@ impl DespawnParticlesEventBuilder {
             linvel_addtl: self.linvel_addtl,
             linear_damping: self.linear_damping,
             angular_damping: self.angular_damping,
+            mass: self.mass,
             lifetime: self.lifetime,
             ignore_parent_phys: self.ignore_parent_phys,
         }

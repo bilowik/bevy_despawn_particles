@@ -49,11 +49,6 @@ impl Plugin for DespawnParticlesPlugin {
         // Register events
         app.add_event::<DespawnParticlesEvent>();
 
-        #[cfg(not(feature = "rapier"))]
-        {
-            app.init_resource::<phys::Gravity>();
-        }
-
         // Register systems and systemset
         // TODO: These might need to be ordered to prevent conflicts potentially?
         app.add_system(handle_despawn_particle.in_set(DespawnParticlesSet));
@@ -62,10 +57,13 @@ impl Plugin for DespawnParticlesPlugin {
         #[cfg(not(feature = "rapier"))]
         {
             app.add_system(phys::phys_tick.in_set(DespawnParticlesSet));
+            app.init_resource::<phys::Gravity>();
         }
 
         #[cfg(feature = "rapier")]
-        app.add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0));
+        {
+            app.add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0));
+        }
     }
 }
 
