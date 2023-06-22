@@ -90,7 +90,6 @@ pub fn handle_despawn_particles_event(
             else {
                 None
             };
-            dbg!(custom_size);
 
             if let Ok(transform) = global_transforms.get(*entity) {
                 let transform: Transform = (*transform).into();
