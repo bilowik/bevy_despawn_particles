@@ -40,7 +40,7 @@ pub struct DespawnParticleBundle {
     pub despawn_particle: DespawnParticle,
     pub mass_properties: AdditionalMassProperties,
     pub velocity: Velocity,
-    pub acceleration: ExternalForce,
+    pub damping: Damping,
     pub rigid_body: RigidBody,
 }
 
@@ -51,7 +51,10 @@ impl Default for DespawnParticleBundle {
             despawn_particle: Default::default(),
             mass_properties: AdditionalMassProperties::Mass(1.0),
             velocity: Default::default(),
-            acceleration: Default::default(),
+            damping: Damping {
+                linear_damping: 2.0,
+                angular_damping: 0.5,
+            },
             rigid_body: Default::default(),
         }
     }
@@ -63,5 +66,6 @@ impl Default for DespawnParticleBundle {
 pub struct DespawnParticleBundle {
     pub despawn_particle: DespawnParticle,
     pub velocity: Velocity,
+    pub damping: Damping,
 }
 

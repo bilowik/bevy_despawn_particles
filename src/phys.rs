@@ -14,6 +14,13 @@ pub struct Friction {
     pub ang: f32,
 }
 
+#[derive(Component, Default, Reflect, FromReflect)]
+#[reflect(Component)]
+pub struct Damping {
+    pub linear_damping: f32,
+    pub angular_damping: f32,
+}
+
 
 #[derive(Resource)]
 pub struct Gravity(pub Vec2);
@@ -21,15 +28,6 @@ pub struct Gravity(pub Vec2);
 impl Default for Gravity {
     fn default() -> Self {
         Self(Vec2::new(0.0, -150.0))
-    }
-}
-
-impl Default for Friction {
-    fn default() -> Self {
-        Friction {
-            lin: 1.0,
-            ang: 1.0,
-        }
     }
 }
 
@@ -57,26 +55,26 @@ impl Default for PhysTimer {
 }
 
 pub(crate) fn phys_tick(
-    mut query: Query<(&mut Transform, &mut Velocity)>,
+    mut query: Query<(&mut Transform, &mut Velocity, &Damping)>,
     mut phys_timer: Local<PhysTimer>,
     time: Res<Time>,
-    friction: Res<Friction>,
     gravity: Res<Gravity>,
 ) {
     phys_timer.timer.tick(time.delta());
     if phys_timer.timer.just_finished() {
         let elapsed = time.elapsed_seconds() - phys_timer.last_run;
         phys_timer.last_run = time.elapsed_seconds();
-        for (mut t, mut v) in query.iter_mut() {
-            t.translation += (v.linvel * elapsed).extend(0.0);
-            t.rotation = t.rotation * Quat::from_rotation_z(v.angvel * elapsed);
-            v.linvel = v.linvel - (v.linvel * elapsed * friction.lin);
-            v.angvel = v.angvel - (v.angvel * elapsed * friction.ang);
-            // Now apply gravity
+        for (mut t, mut v, d) in query.iter_mut() {
+            v.linvel = v.linvel - (v.linvel * elapsed);
+            v.angvel = v.angvel - (v.angvel * elapsed);
+            v.linvel *= 1.0 / (1.0 + (elapsed * d.linear_damping));
+            v.angvel *= 1.0 / (1.0 + (elapsed * d.angular_damping));
 
             v.linvel += gravity.0 * elapsed;
+
+
+            t.translation += (v.linvel * elapsed).extend(0.0);
+            t.rotation = t.rotation * Quat::from_rotation_z(v.angvel * elapsed);
         }
-
-
     }
 }

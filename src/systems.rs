@@ -6,7 +6,7 @@ use bevy_rapier2d::prelude::*;
 use bevy_variable_property::prelude::*;
 
 #[cfg(not(feature = "rapier"))]
-use crate::phys::Velocity;
+use crate::phys::{Velocity, Damping};
 
 use crate::{
     components::*,
@@ -33,7 +33,16 @@ pub fn handle_despawn_particles_event(
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
 ) {
-    for DespawnParticlesEvent { entity, linvel, linvel_addtl, angvel, ignore_parent_phys, lifetime } in despawn_particles_event_reader.iter() {
+    for DespawnParticlesEvent { 
+        entity, 
+        linvel, 
+        linvel_addtl, 
+        angvel, 
+        ignore_parent_phys, 
+        lifetime,
+        linear_damping,
+        angular_damping,
+    } in despawn_particles_event_reader.iter() {
         if let Some(mut entity_commands) = commands.get_entity(*entity) {
             entity_commands.despawn();
             // Now spawn the death animation, if possible
@@ -151,6 +160,10 @@ pub fn handle_despawn_particles_event(
                                 velocity: Velocity {
                                     linvel: velocity,
                                     angvel: angvel.get_value(),
+                                },
+                                damping: Damping {
+                                    linear_damping: linear_damping.get_value(),
+                                    angular_damping: angular_damping.get_value(),
                                 },
                                 ..default()
                             },

@@ -51,7 +51,6 @@ impl Plugin for DespawnParticlesPlugin {
 
         #[cfg(not(feature = "rapier"))]
         {
-            app.init_resource::<phys::Friction>();
             app.init_resource::<phys::Gravity>();
         }
 
