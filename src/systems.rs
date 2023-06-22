@@ -3,6 +3,8 @@ use bevy::{prelude::*, sprite::Mesh2dHandle};
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
 
+use bevy_variable_property::prelude::*;
+
 #[cfg(not(feature = "rapier"))]
 use crate::phys::Velocity;
 
@@ -15,7 +17,7 @@ use crate::{
 
 use rand::Rng;
 
-const DEATH_VEL: f32 = 20.0;
+const DEATH_VEL: f32 = 100.0;
 
 
 
@@ -34,7 +36,7 @@ pub fn handle_despawn_particles_event(
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
 ) {
-    for DespawnParticlesEvent { entity } in despawn_particles_event_reader.iter() {
+    for DespawnParticlesEvent { entity, linvel, angvel, phys_is_additive } in despawn_particles_event_reader.iter() {
         if let Some(mut entity_commands) = commands.get_entity(*entity) {
             entity_commands.despawn();
             // Now spawn the death animation, if possible
@@ -134,6 +136,16 @@ pub fn handle_despawn_particles_event(
                         let additional_velocity_from_angvel = Vec2::new(total_velocity_from_angvel * perp_angle.sin(),
                                 total_velocity_from_angvel * perp_angle.cos());
 
+                        let total_linvel = if *phys_is_additive {
+                            // Include the contextual velocities
+                            velocity + parent_velocity.linvel + additional_velocity_from_angvel 
+                        }
+
+                        else {
+                            // Ignores the above given velocities and just uses the generated one.
+                            Vec2::ZERO
+                        } + linvel.as_ref().and_then(|p| Some(p.get_value())).unwrap_or_default();
+
                         let material = despawn_materials.add(DespawnMaterial {
                             alpha: 1.0,
                             source_image: image_handle.clone(),
@@ -144,8 +156,8 @@ pub fn handle_despawn_particles_event(
                             DespawnParticleBundle {
                                 despawn_particle: DespawnParticle::new(1.0),
                                 velocity: Velocity {
-                                    linvel: velocity + parent_velocity.linvel + additional_velocity_from_angvel,
-                                    angvel: 0.8,
+                                    linvel: total_linvel,
+                                    angvel: angvel.as_ref().and_then(|p| Some(p.get_value())).unwrap_or_default(),
                                 },
                                 ..default()
                             },

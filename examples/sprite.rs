@@ -1,5 +1,5 @@
 // Also acts as a test to ensure that the alpha of the underlying sprite is being utilized
-// correctly 
+// correctly
 use bevy::prelude::*;
 use bevy_despawn_particles::prelude::*;
 
@@ -23,10 +23,7 @@ fn main() {
         .run();
 }
 
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
     commands
         .spawn(SpriteBundle {
@@ -35,7 +32,6 @@ fn setup(
         })
         .insert(Marker);
 }
-
 
 fn tick(
     mut timer: Local<MyTimer>,
@@ -48,11 +44,15 @@ fn tick(
     timer.0.tick(time.delta());
     if timer.0.just_finished() {
         if let Ok(entity) = marker.get_single() {
-            despawn_particles_event_writer.send(DespawnParticlesEvent { entity }); 
+            despawn_particles_event_writer.send(
+                DespawnParticlesEvent::builder(entity)
+                    .with_angvel(-20.0..=20.0)
+                    .with_linvel(Vec2::new(-50.0, -50.0)..Vec2::new(50.0, 50.0))
+                    .build(),
+            );
             timer.0 = Timer::from_seconds(1.2, TimerMode::Once);
             timer.0.reset();
-        }
-        else {
+        } else {
             commands
                 .spawn(SpriteBundle {
                     texture: asset_server.load("asteroid_round.png"),
@@ -62,5 +62,4 @@ fn tick(
             timer.0 = Timer::from_seconds(0.5, TimerMode::Once);
         }
     }
-
 }
