@@ -6,6 +6,9 @@ use bevy::render::prelude::Shader;
 
 use bevy::sprite::Material2dPlugin;
 
+#[cfg(feature = "rapier")]
+use bevy_rapier2d::prelude::*;
+
 mod despawn;
 mod systems;
 mod components;
@@ -13,6 +16,7 @@ pub mod events;
 
 #[cfg(not(feature = "rapier"))]
 mod phys;
+
 
 mod utils;
 
@@ -44,6 +48,8 @@ impl Plugin for DespawnParticlesPlugin {
 
         // Register events
         app.add_event::<DespawnParticlesEvent>();
+
+        #[cfg(not(feature = "rapier"))]
         app.init_resource::<phys::Friction>();
 
         // Register systems and systemset
@@ -55,6 +61,9 @@ impl Plugin for DespawnParticlesPlugin {
         {
             app.add_system(phys::phys_tick.in_set(DespawnParticlesSet));
         }
+
+        #[cfg(feature = "rapier")]
+        app.add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0));
     }
 }
 
