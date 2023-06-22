@@ -46,8 +46,8 @@ fn tick(
         if let Ok(entity) = marker.get_single() {
             despawn_particles_event_writer.send(
                 DespawnParticlesEvent::builder(entity)
-                    .with_angvel(-10.0..=10.0)
-                    .with_linvel(Vec2::new(-50.0, -50.0)..Vec2::new(50.0, 50.0))
+                    .with_angvel(-5.0..=5.0)
+                    .with_linvel(75.0..=150.0)
                     .with_lifetime(0.3..=1.0)
                     .build(),
             );

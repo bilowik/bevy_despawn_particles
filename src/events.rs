@@ -4,18 +4,20 @@ use bevy_variable_property::Property;
 #[derive(Clone)]
 pub struct DespawnParticlesEvent {
     pub entity: Entity,
-    pub angvel: Option<Property<f32>>,
-    pub linvel: Option<Property<Vec2>>,
+    pub angvel: Property<f32>,
+    pub linvel: Property<f32>,
+    pub linvel_addtl: Property<Vec2>,
     pub lifetime: Property<f32>,
-    pub phys_is_additive: bool,
+    pub ignore_parent_phys: bool,
 }
 
 #[derive(Clone)]
 pub struct DespawnParticlesEventBuilder {
     pub entity: Entity,
-    pub angvel: Option<Property<f32>>,
-    pub linvel: Option<Property<Vec2>>,
-    pub phys_is_additive: bool,
+    pub angvel: Property<f32>,
+    pub linvel: Property<f32>,
+    pub linvel_addtl: Property<Vec2>,
+    pub ignore_parent_phys: bool,
     pub lifetime: Property<f32>,
 }
 
@@ -30,20 +32,21 @@ impl DespawnParticlesEventBuilder {
     pub fn new(entity: Entity) -> Self {
         Self {
             entity,
-            angvel: None,
-            linvel: None,
+            angvel: Default::default(),
+            linvel: Default::default(),
+            linvel_addtl: Default::default(),
             lifetime: 1.0.into(),
-            phys_is_additive: true,
+            ignore_parent_phys: true,
         }
     }
 
     pub fn with_angvel<T: Into<Property<f32>>>(mut self, v: T) -> Self {
-        self.angvel = Some(v.into());
+        self.angvel = v.into();
         self
     }
 
-    pub fn with_linvel<T: Into<Property<Vec2>>>(mut self, v: T) -> Self {
-        self.linvel = Some(v.into());
+    pub fn with_linvel<T: Into<Property<f32>>>(mut self, v: T) -> Self {
+        self.linvel = v.into();
         self
     }
     pub fn with_lifetime<T: Into<Property<f32>>>(mut self, v: T) -> Self {
@@ -51,8 +54,13 @@ impl DespawnParticlesEventBuilder {
         self
     }
     
-    pub fn with_additive_phys(mut self, phys_is_additive: bool) -> Self {
-        self.phys_is_additive = phys_is_additive;
+    pub fn with_ignore_parent_phys(mut self, ignore_parent_phys: bool) -> Self {
+        self.ignore_parent_phys = ignore_parent_phys;
+        self
+    }
+
+    pub fn with_linvel_addtl<T: Into<Property<Vec2>>>(mut self, v: T) -> Self {
+        self.linvel_addtl = v.into();
         self
     }
 
@@ -61,8 +69,9 @@ impl DespawnParticlesEventBuilder {
             entity: self.entity,
             angvel: self.angvel,
             linvel: self.linvel,
+            linvel_addtl: self.linvel_addtl,
             lifetime: self.lifetime,
-            phys_is_additive: self.phys_is_additive,
+            ignore_parent_phys: self.ignore_parent_phys,
         }
     }
 }

@@ -17,9 +17,6 @@ use crate::{
 
 use rand::Rng;
 
-const DEATH_VEL: f32 = 100.0;
-
-
 
 /// Spawns death particles by creating a particles with a shader that pulls a small portion of the original texture 
 pub fn handle_despawn_particles_event(
@@ -36,7 +33,7 @@ pub fn handle_despawn_particles_event(
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
 ) {
-    for DespawnParticlesEvent { entity, linvel, angvel, phys_is_additive, lifetime } in despawn_particles_event_reader.iter() {
+    for DespawnParticlesEvent { entity, linvel, linvel_addtl, angvel, ignore_parent_phys, lifetime } in despawn_particles_event_reader.iter() {
         if let Some(mut entity_commands) = commands.get_entity(*entity) {
             entity_commands.despawn();
             // Now spawn the death animation, if possible
@@ -123,28 +120,24 @@ pub fn handle_despawn_particles_event(
                             + transform.rotation.normalize().mul_vec3(offset.extend(0.0));
                         let angle = angle_between3(center_point, translation)
                             + rand::thread_rng().gen_range(-0.8..0.8);
-                        let velocity =
-                            Vec2::new(DEATH_VEL * angle.sin(), DEATH_VEL * angle.cos());
                         let parent_velocity =
                             velocities.get(*entity).copied().unwrap_or_default();
 
-                        // Use the parent's last known angvel to calculate additional linear
-                        // velocity
-                        let perp_angle = angle - (std::f32::consts::PI / 2.0);
-                        let radius = center_point.distance(translation);
-                        let total_velocity_from_angvel = radius * parent_velocity.angvel;
-                        let additional_velocity_from_angvel = Vec2::new(total_velocity_from_angvel * perp_angle.sin(),
-                                total_velocity_from_angvel * perp_angle.cos());
-
-                        let total_linvel = if *phys_is_additive {
-                            // Include the contextual velocities
-                            velocity + parent_velocity.linvel + additional_velocity_from_angvel 
-                        }
-
-                        else {
-                            // Ignores the above given velocities and just uses the generated one.
+                        let vel_scalar = linvel.get_value();
+                        let velocity = Vec2::new(vel_scalar * angle.sin(), vel_scalar * angle.cos()) + if *ignore_parent_phys {
                             Vec2::ZERO
-                        } + linvel.as_ref().and_then(|p| Some(p.get_value())).unwrap_or_default();
+                        }
+                        else {
+                            // Use the parent's last known angvel to calculate additional linear
+                            // velocity
+                            let perp_angle = angle - (std::f32::consts::PI / 2.0);
+                            let radius = center_point.distance(translation);
+                            let total_velocity_from_angvel = radius * parent_velocity.angvel;
+                            let additional_velocity_from_angvel = Vec2::new(total_velocity_from_angvel * perp_angle.sin(),
+                                    total_velocity_from_angvel * perp_angle.cos());
+                            parent_velocity.linvel + additional_velocity_from_angvel
+                        } + linvel_addtl.get_value();
+
 
                         let material = despawn_materials.add(DespawnMaterial {
                             alpha: 1.0,
@@ -156,8 +149,8 @@ pub fn handle_despawn_particles_event(
                             DespawnParticleBundle {
                                 despawn_particle: DespawnParticle::new(lifetime.get_value()),
                                 velocity: Velocity {
-                                    linvel: total_linvel,
-                                    angvel: angvel.as_ref().and_then(|p| Some(p.get_value())).unwrap_or_default(),
+                                    linvel: velocity,
+                                    angvel: angvel.get_value(),
                                 },
                                 ..default()
                             },
