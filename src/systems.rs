@@ -36,7 +36,7 @@ pub fn handle_despawn_particles_event(
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
 ) {
-    for DespawnParticlesEvent { entity, linvel, angvel, phys_is_additive } in despawn_particles_event_reader.iter() {
+    for DespawnParticlesEvent { entity, linvel, angvel, phys_is_additive, lifetime } in despawn_particles_event_reader.iter() {
         if let Some(mut entity_commands) = commands.get_entity(*entity) {
             entity_commands.despawn();
             // Now spawn the death animation, if possible
@@ -154,7 +154,7 @@ pub fn handle_despawn_particles_event(
                         });
                         commands.spawn((
                             DespawnParticleBundle {
-                                despawn_particle: DespawnParticle::new(1.0),
+                                despawn_particle: DespawnParticle::new(lifetime.get_value()),
                                 velocity: Velocity {
                                     linvel: total_linvel,
                                     angvel: angvel.as_ref().and_then(|p| Some(p.get_value())).unwrap_or_default(),

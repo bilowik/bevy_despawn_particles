@@ -6,6 +6,7 @@ pub struct DespawnParticlesEvent {
     pub entity: Entity,
     pub angvel: Option<Property<f32>>,
     pub linvel: Option<Property<Vec2>>,
+    pub lifetime: Property<f32>,
     pub phys_is_additive: bool,
 }
 
@@ -15,6 +16,7 @@ pub struct DespawnParticlesEventBuilder {
     pub angvel: Option<Property<f32>>,
     pub linvel: Option<Property<Vec2>>,
     pub phys_is_additive: bool,
+    pub lifetime: Property<f32>,
 }
 
 impl DespawnParticlesEvent {
@@ -30,6 +32,7 @@ impl DespawnParticlesEventBuilder {
             entity,
             angvel: None,
             linvel: None,
+            lifetime: 1.0.into(),
             phys_is_additive: true,
         }
     }
@@ -43,6 +46,10 @@ impl DespawnParticlesEventBuilder {
         self.linvel = Some(v.into());
         self
     }
+    pub fn with_lifetime<T: Into<Property<f32>>>(mut self, v: T) -> Self {
+        self.lifetime = v.into();
+        self
+    }
     
     pub fn with_additive_phys(mut self, phys_is_additive: bool) -> Self {
         self.phys_is_additive = phys_is_additive;
@@ -54,6 +61,7 @@ impl DespawnParticlesEventBuilder {
             entity: self.entity,
             angvel: self.angvel,
             linvel: self.linvel,
+            lifetime: self.lifetime,
             phys_is_additive: self.phys_is_additive,
         }
     }
