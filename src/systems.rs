@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::Mesh2dHandle};
+use bevy::{prelude::*, sprite::Mesh2dHandle, ecs::system::EntityCommands};
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
@@ -42,8 +42,34 @@ pub fn handle_despawn_particles_event(
         lifetime,
         linear_damping,
         angular_damping,
-        mass
+        mass,
+        shrink,
+        fade,
     } in despawn_particles_event_reader.iter() {
+
+        // Use closures so we don't have to re-do the if statement for every single particle.
+        // This assumes the no-op actually gets optimized out, which is may not..
+        let shrink_spawn_func = if *shrink {
+            |entity_cmds: &mut EntityCommands| {
+                entity_cmds.insert(ShrinkingDespawnParticle);
+            }
+        }
+        else {
+            |_entity_cmds: &mut EntityCommands| {}
+
+        };
+
+        let fade_spawn_func = if *fade {
+            |entity_cmds: &mut EntityCommands| {
+                entity_cmds.insert(FadingDespawnParticle);
+            }
+        }
+        else {
+            |_entity_cmds: &mut EntityCommands| {}
+
+        };
+
+
         if let Some(mut entity_commands) = commands.get_entity(*entity) {
             entity_commands.despawn();
             // Now spawn the death animation, if possible
@@ -155,7 +181,7 @@ pub fn handle_despawn_particles_event(
                             offset: (Vec2::new(x as f32, y as f32) * percent_size) + sheet_offset,
                             size: percent_size,
                         });
-                        commands.spawn((
+                        let mut entity_cmds = commands.spawn((
                             DespawnParticleBundle {
                                 despawn_particle: DespawnParticle::new(lifetime.get_value()),
                                 velocity: Velocity {
@@ -184,6 +210,10 @@ pub fn handle_despawn_particles_event(
                                 ..default()
                             },
                         ));
+
+                        shrink_spawn_func(&mut entity_cmds);
+                        fade_spawn_func(&mut entity_cmds);
+
                     }
                 }
             }
@@ -192,12 +222,12 @@ pub fn handle_despawn_particles_event(
 }
 
 pub fn handle_despawn_particle(
-    mut despawn_particles: Query<(Entity, &Handle<DespawnMaterial>, &mut DespawnParticle, &mut Transform)>,
+    mut despawn_particles: Query<(Entity, &Handle<DespawnMaterial>, &mut DespawnParticle, &mut Transform, Option<&ShrinkingDespawnParticle>, Option<&FadingDespawnParticle>)>,
     mut despawn_materials: ResMut<Assets<DespawnMaterial>>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
-    for (entity, material_handle, mut despawn_particle, mut transform) in despawn_particles.iter_mut() {
+    for (entity, material_handle, mut despawn_particle, mut transform, maybe_shrink, maybe_fade) in despawn_particles.iter_mut() {
         despawn_particle.lifetime.tick(time.delta());
         if despawn_particle.lifetime.finished() {
             if let Some(mut entity_commands) = commands.get_entity(entity) {
@@ -205,10 +235,14 @@ pub fn handle_despawn_particle(
             }
         }
         let percent = despawn_particle.lifetime.percent_left();
-        if let Some(mut material) = despawn_materials.get_mut(material_handle) {
-            material.alpha = percent;
+        if maybe_fade.is_some() {
+            if let Some(material) = despawn_materials.get_mut(material_handle) {
+                material.alpha = percent;
+            }
         }
-        transform.scale = Vec3::splat(percent);
+        if maybe_shrink.is_some() {
+            transform.scale = Vec3::splat(percent);
+        }
     }
 }
 

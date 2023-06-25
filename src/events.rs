@@ -12,6 +12,8 @@ pub struct DespawnParticlesEvent {
     pub lifetime: Property<f32>,
     pub mass: Property<f32>,
     pub ignore_parent_phys: bool,
+    pub shrink: bool,
+    pub fade: bool,
 }
 
 #[derive(Clone)]
@@ -25,6 +27,8 @@ pub struct DespawnParticlesEventBuilder {
     pub lifetime: Property<f32>,
     pub mass: Property<f32>,
     pub ignore_parent_phys: bool,
+    pub shrink: bool,
+    pub fade: bool,
 }
 
 impl DespawnParticlesEvent {
@@ -45,7 +49,9 @@ impl DespawnParticlesEventBuilder {
             linear_damping: Default::default(),
             angular_damping: Default::default(),
             mass: Default::default(),
-            ignore_parent_phys: true,
+            ignore_parent_phys: false,
+            shrink: false,
+            fade: false,
         }
     }
 
@@ -87,6 +93,16 @@ impl DespawnParticlesEventBuilder {
         self.mass = v.into();
         self
     }
+
+    pub fn with_shrink(mut self, shrink: bool) -> Self {
+        self.shrink = shrink;
+        self
+    }
+
+    pub fn with_fade(mut self, fade: bool) -> Self {
+        self.fade = fade;
+        self
+    }
     pub fn build(self) -> DespawnParticlesEvent {
         DespawnParticlesEvent {
             entity: self.entity,
@@ -98,6 +114,8 @@ impl DespawnParticlesEventBuilder {
             mass: self.mass,
             lifetime: self.lifetime,
             ignore_parent_phys: self.ignore_parent_phys,
+            shrink: self.shrink,
+            fade: self.fade,
         }
     }
 }

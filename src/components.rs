@@ -26,8 +26,6 @@ impl Default for DespawnParticle {
 }
 
 
-// These are held separately for future implementation of 
-// shrink/fade curves. For now it is strictly linear.
 #[derive(Component, Default)]
 pub struct FadingDespawnParticle;
 
@@ -59,3 +57,5 @@ impl Default for DespawnParticleBundle {
         }
     }
 }
+
+
