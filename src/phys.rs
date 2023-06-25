@@ -66,7 +66,7 @@ impl Default for PhysTimer {
 }
 
 pub(crate) fn phys_tick(
-    mut query: Query<(&mut Transform, &mut Velocity, &Damping)>,
+    mut query: Query<(&mut Transform, &mut Velocity, &Damping, &AdditionalMassProperties)>,
     mut phys_timer: Local<PhysTimer>,
     time: Res<Time>,
     gravity: Res<Gravity>,
@@ -75,13 +75,15 @@ pub(crate) fn phys_tick(
     if phys_timer.timer.just_finished() {
         let elapsed = time.elapsed_seconds() - phys_timer.last_run;
         phys_timer.last_run = time.elapsed_seconds();
-        for (mut t, mut v, d) in query.iter_mut() {
+        for (mut t, mut v, d, m) in query.iter_mut() {
             v.linvel = v.linvel - (v.linvel * elapsed);
             v.angvel = v.angvel - (v.angvel * elapsed);
             v.linvel *= 1.0 / (1.0 + (elapsed * d.linear_damping));
             v.angvel *= 1.0 / (1.0 + (elapsed * d.angular_damping));
-
-            v.linvel += gravity.0 * elapsed;
+            
+            // [m.0.clamp(0.0, 1.0).ceil()] returns 1.0 if mass is non-zero, otherwise 0.0.
+            // If an object has 0 mass, then gravity should not apply to it. 
+            v.linvel += gravity.0 * elapsed * m.0.clamp(0.0, 1.0).ceil();
 
 
             t.translation += (v.linvel * elapsed).extend(0.0);
