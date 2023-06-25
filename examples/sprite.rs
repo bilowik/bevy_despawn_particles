@@ -48,9 +48,9 @@ fn tick(
                 DespawnParticlesEvent::builder(entity)
                     .with_angvel(-5.0..=5.0)
                     .with_linvel(150.0..=350.0)
-                    .with_lifetime(0.3..=1.0)
-                    .with_linear_damping(5.0)
-                    .with_angular_damping(5.0)
+                    .with_lifetime(1.0)
+                    .with_linear_damping(1.0)
+                    .with_angular_damping(1.0)
                     .with_mass(1.0..=15.0)
                     .build(),
             );
