@@ -3,7 +3,7 @@ use bevy_variable_property::Property;
 
 /// Defines a preset for [DespawnParticlesEvent] that can be used to repeatedly generate
 /// events with the same parameters using [DespawnParticlesPreset::create_event]
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct DespawnParticlesPreset {
     pub angvel: Property<f32>,
     pub linvel: Property<f32>,
