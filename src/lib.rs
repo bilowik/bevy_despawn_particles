@@ -68,7 +68,7 @@ impl Plugin for DespawnParticlesPlugin {
 }
 
 pub mod prelude {
-    pub use crate::events::DespawnParticlesEvent;
+    pub use crate::events::{DespawnParticlesEvent, DespawnParticlesPreset};
     pub use crate::{DespawnParticlesPlugin, DespawnParticlesSet};
 
     #[cfg(not(feature = "rapier"))]

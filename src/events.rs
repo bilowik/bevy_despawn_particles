@@ -1,6 +1,40 @@
 use bevy::prelude::*;
 use bevy_variable_property::Property;
 
+/// Defines a preset for [DespawnParticlesEvent] that can be used to repeatedly generate
+/// events with the same parameters using [DespawnParticlesPreset::create_event]
+#[derive(Clone)]
+pub struct DespawnParticlesPreset {
+    pub angvel: Property<f32>,
+    pub linvel: Property<f32>,
+    pub linvel_addtl: Property<Vec2>,
+    pub linear_damping: Property<f32>,
+    pub angular_damping: Property<f32>,
+    pub lifetime: Property<f32>,
+    pub mass: Property<f32>,
+    pub ignore_parent_phys: bool,
+    pub shrink: bool,
+    pub fade: bool,
+}
+
+impl DespawnParticlesPreset {
+    pub fn create_event(&self, entity: Entity) -> DespawnParticlesEvent {
+        DespawnParticlesEvent {
+            entity,
+            angvel: self.angvel.clone(),
+            linvel: self.linvel.clone(),
+            linvel_addtl: self.linvel_addtl.clone(),
+            linear_damping: self.linear_damping.clone(),
+            angular_damping: self.angular_damping.clone(),
+            mass: self.mass.clone(),
+            lifetime: self.lifetime.clone(),
+            ignore_parent_phys: self.ignore_parent_phys.clone(),
+            shrink: self.shrink,
+            fade: self.fade,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct DespawnParticlesEvent {
     pub entity: Entity,
