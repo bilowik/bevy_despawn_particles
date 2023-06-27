@@ -1,5 +1,3 @@
-// Also acts as a test to ensure that the alpha of the underlying sprite is being utilized
-// correctly
 use bevy::prelude::*;
 use bevy_despawn_particles::prelude::*;
 
@@ -45,8 +43,8 @@ fn tick(
     if timer.0.just_finished() {
         if let Ok(entity) = marker.get_single() {
             despawn_particles_event_writer.send(
-                DespawnParticlesEvent::builder(entity)
-                    .build(),
+                DespawnParticlesEvent::builder()
+                    .build(entity),
             );
             timer.0 = Timer::from_seconds(1.2, TimerMode::Once);
             timer.0.reset();
