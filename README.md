@@ -34,14 +34,14 @@ fn despawn(
     if let Ok(entity) = entities.get_single() {
         despawn_particles_event_writer.send(
             DespawnParticlesEvent::builder()
-                .with_fade(true)
-                .with_shrink(true)
-                .with_linvel(150.0)
-                .with_angvel([-5.0, -2.5, 2.5, 5.0])
-                .with_mass(1.0)
-                .with_lifetime(1.0)
-                .with_angular_damping(1.0)
-                .with_linear_damping(1.0)
+                .with_fade(true) // The particles will fade as they get closer to expiration
+                .with_shrink(true) // The particles will shrink as they get closer to expiration
+                .with_linvel(150.0..300.0) // Random velocity between 150.0 and 300.0
+                .with_angvel([-5.0, -2.5, 2.5, 5.0]) // Random angular velocity from the given list
+                .with_mass(1.0) // Always 1.0
+                .with_lifetime(0.3..1.0) // Random lifetime between 0.3 and 1.0
+                .with_angular_damping(1.0) // Always 1.0, angular 'friction' that decelerates the particle
+                .with_linear_damping(1.0) // Always 1.0, linear 'friction' that decelerates the particle
                 .build(entity),
         );
     }
