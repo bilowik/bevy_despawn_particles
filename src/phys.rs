@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-
 #[derive(Component, Default, Reflect, FromReflect, Copy, Clone)]
 #[reflect(Component)]
 pub struct Velocity {
@@ -25,7 +24,6 @@ impl From<f32> for AdditionalMassProperties {
         Self(v)
     }
 }
-
 
 #[derive(Resource)]
 pub struct Gravity(pub Vec2);
@@ -54,13 +52,18 @@ impl Default for PhysTimer {
     fn default() -> Self {
         Self {
             timer: Timer::from_seconds(1.0 / 60.0, TimerMode::Repeating),
-            last_run: 0.0
+            last_run: 0.0,
         }
     }
 }
 
 pub(crate) fn phys_tick(
-    mut query: Query<(&mut Transform, &mut Velocity, &Damping, &AdditionalMassProperties)>,
+    mut query: Query<(
+        &mut Transform,
+        &mut Velocity,
+        &Damping,
+        &AdditionalMassProperties,
+    )>,
     mut phys_timer: Local<PhysTimer>,
     time: Res<Time>,
     gravity: Res<Gravity>,
@@ -72,11 +75,10 @@ pub(crate) fn phys_tick(
         for (mut t, mut v, d, m) in query.iter_mut() {
             v.linvel *= 1.0 / (1.0 + (elapsed * d.linear_damping));
             v.angvel *= 1.0 / (1.0 + (elapsed * d.angular_damping));
-            
-            // [m.0.clamp(0.0, 1.0).ceil()] returns 1.0 if mass is non-zero, otherwise 0.0.
-            // If an object has 0 mass, then gravity should not apply to it. 
-            v.linvel += gravity.0 * elapsed * m.0.clamp(0.0, 1.0).ceil();
 
+            // [m.0.clamp(0.0, 1.0).ceil()] returns 1.0 if mass is non-zero, otherwise 0.0.
+            // If an object has 0 mass, then gravity should not apply to it.
+            v.linvel += gravity.0 * elapsed * m.0.clamp(0.0, 1.0).ceil();
 
             t.translation += (v.linvel * elapsed).extend(0.0);
             t.rotation = t.rotation * Quat::from_rotation_z(v.angvel * elapsed);

@@ -1,8 +1,8 @@
 use bevy::{
     prelude::*,
-    sprite::Material2d,
-    render::render_resource::{AsBindGroup, ShaderRef},
     reflect::TypeUuid,
+    render::render_resource::{AsBindGroup, ShaderRef},
+    sprite::Material2d,
 };
 
 pub const DESPAWN_MATERIAL_SHADER_HANDLE: HandleUntyped =
@@ -17,8 +17,8 @@ pub struct DespawnMaterial {
 
     /// Percentage, as a value between 0.0 and 1.0
     #[uniform(2)]
-    pub offset: Vec2, 
-    
+    pub offset: Vec2,
+
     /// Percentage, as a value between 0.0 and 1.0
     #[uniform(2)]
     pub size: Vec2,
@@ -28,12 +28,11 @@ pub struct DespawnMaterial {
     pub alpha: f32,
 }
 
-impl Material2d for DespawnMaterial{
+impl Material2d for DespawnMaterial {
     fn fragment_shader() -> ShaderRef {
         DESPAWN_MATERIAL_SHADER_HANDLE.typed().into()
     }
 }
-
 
 #[derive(Component, Default, Reflect, FromReflect)]
 #[reflect(Component)]

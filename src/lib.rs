@@ -9,21 +9,19 @@ use bevy::sprite::Material2dPlugin;
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
 
-mod despawn;
-mod systems;
 pub mod components;
+mod despawn;
 pub mod events;
+mod systems;
 
 #[cfg(not(feature = "rapier"))]
 mod phys;
 
-
 mod utils;
 
-use despawn::{DESPAWN_MATERIAL_SHADER_HANDLE, DespawnMaterial};
-use systems::{handle_despawn_particle, handle_despawn_particles_event};
+use despawn::{DespawnMaterial, DESPAWN_MATERIAL_SHADER_HANDLE};
 use events::DespawnParticlesEvent;
-
+use systems::{handle_despawn_particle, handle_despawn_particles_event};
 
 /// The despawn particle plugin. Required to utilize this crate.
 #[derive(Default)]
@@ -68,7 +66,7 @@ impl Plugin for DespawnParticlesPlugin {
 }
 
 pub mod prelude {
+    pub use crate::components::DespawnParticle;
     pub use crate::events::{DespawnParticlesEvent, DespawnParticlesPreset};
     pub use crate::{DespawnParticlesPlugin, DespawnParticlesSet};
-    pub use crate::components::DespawnParticle;
 }

@@ -42,10 +42,7 @@ fn tick(
     timer.0.tick(time.delta());
     if timer.0.just_finished() {
         if let Ok(entity) = marker.get_single() {
-            despawn_particles_event_writer.send(
-                DespawnParticlesEvent::builder()
-                    .build(entity),
-            );
+            despawn_particles_event_writer.send(DespawnParticlesEvent::builder().build(entity));
             timer.0 = Timer::from_seconds(1.2, TimerMode::Once);
             timer.0.reset();
         } else {

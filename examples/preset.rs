@@ -1,4 +1,3 @@
-
 use bevy::prelude::*;
 use bevy_despawn_particles::prelude::*;
 
@@ -12,15 +11,15 @@ pub struct MyPreset(pub DespawnParticlesPreset);
 
 impl Default for MyPreset {
     fn default() -> Self {
-        Self(DespawnParticlesPreset::new()
-             .with_linvel(100.0..180.0)
-             .with_angvel(-5.0..5.0)
-             .with_fade(true)
-             .with_shrink(true)
+        Self(
+            DespawnParticlesPreset::new()
+                .with_linvel(100.0..180.0)
+                .with_angvel(-5.0..5.0)
+                .with_fade(true)
+                .with_shrink(true),
         )
     }
 }
-
 
 impl Default for MyTimer {
     fn default() -> Self {
@@ -46,7 +45,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         })
         .insert(Marker);
-
 }
 
 fn tick(
@@ -61,9 +59,7 @@ fn tick(
     timer.0.tick(time.delta());
     if timer.0.just_finished() {
         if let Ok(entity) = marker.get_single() {
-            despawn_particles_event_writer.send(
-                preset.0.clone().build(entity),
-            );
+            despawn_particles_event_writer.send(preset.0.clone().build(entity));
             timer.0 = Timer::from_seconds(1.2, TimerMode::Once);
             timer.0.reset();
         } else {

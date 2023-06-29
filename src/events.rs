@@ -37,7 +37,7 @@ pub struct DespawnParticlesEvent {
     /// The linear velocity. The actual velocity vector is calculated using this and the angle the
     /// particle is from the center of the Entity.
     pub linvel: Property<f32>,
-    
+
     /// Additive velocity that is applied uniformly to all generated particles. This does not take
     /// into account the angle the particle is from the center of the entity.
     pub linvel_addtl: Property<Vec2>,
@@ -53,7 +53,7 @@ pub struct DespawnParticlesEvent {
     /// The length of time the generated particles will live for.
     pub lifetime: Property<f32>,
 
-    /// The mass 
+    /// The mass
     pub mass: Property<f32>,
 
     /// When true, the generated particles will ignore the target entity's velocities. When false, the
@@ -67,7 +67,7 @@ pub struct DespawnParticlesEvent {
     pub fade: bool,
 }
 
-/// The builder struct for [DespawnParticlesEvent], typically this should be instantiated with 
+/// The builder struct for [DespawnParticlesEvent], typically this should be instantiated with
 /// [DespawnParticlesEvent::builder].
 #[derive(Clone)]
 pub struct DespawnParticlesEventBuilder {
@@ -84,7 +84,6 @@ pub struct DespawnParticlesEventBuilder {
 }
 
 impl DespawnParticlesEvent {
-
     pub fn builder() -> DespawnParticlesEventBuilder {
         DespawnParticlesEventBuilder::new()
     }
@@ -105,7 +104,7 @@ impl DespawnParticlesEventBuilder {
             fade: false,
         }
     }
-    
+
     /// See [DespawnParticlesEvent::angvel]
     pub fn with_angvel<T: Into<Property<f32>>>(mut self, v: T) -> Self {
         self.angvel = v.into();
@@ -123,7 +122,7 @@ impl DespawnParticlesEventBuilder {
         self.lifetime = v.into();
         self
     }
-    
+
     /// See [DespawnParticlesEvent::ignore_parent_phys]
     pub fn with_ignore_parent_phys(mut self, ignore_parent_phys: bool) -> Self {
         self.ignore_parent_phys = ignore_parent_phys;
@@ -182,7 +181,6 @@ impl DespawnParticlesEventBuilder {
         }
     }
 }
-
 
 /// Defines a preset for [DespawnParticlesEvent] that can be used to repeatedly generate
 /// events with the same parameters using [DespawnParticlesPreset::create_event]
