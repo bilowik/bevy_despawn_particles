@@ -1,4 +1,5 @@
 An event-based plugin for the Bevy game engine that provides a simple way to add a despawn effect for 2D sprites. 
+Contains a basic physics implementation or a feature for bevy_rapier integration.
 
 
 ## Examples
@@ -6,7 +7,7 @@ An event-based plugin for the Bevy game engine that provides a simple way to add
 
 | `cargo run --release --example the_works`| 
 |:--:|
-| This example utilizes most of the parameters available |
+| This example utilizes most of the parameters available. The particles fade and shrink, have a mass affected by gravity, shoot outwards and have some amount of angular velocity.  |
 |![Screencast from 2023-06-28 21-02-54](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/34e41811-261d-494d-92fd-2ef1002185fd)|
 
 ___
