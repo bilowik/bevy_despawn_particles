@@ -1,3 +1,5 @@
+//! An event-based plugin for the Bevy game engine that provides a simple way to add a despawn
+//! effect for 2D sprites.
 use bevy::app::{App, Plugin};
 use bevy::asset::{load_internal_asset, AddAsset};
 use bevy::ecs::prelude::IntoSystemConfig;
