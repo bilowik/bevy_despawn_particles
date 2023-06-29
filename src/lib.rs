@@ -11,7 +11,7 @@ use bevy_rapier2d::prelude::*;
 
 mod despawn;
 mod systems;
-mod components;
+pub mod components;
 pub mod events;
 
 #[cfg(not(feature = "rapier"))]
@@ -25,7 +25,7 @@ use systems::{handle_despawn_particle, handle_despawn_particles_event};
 use events::DespawnParticlesEvent;
 
 
-/// The bevy plugin to include during App initialization
+/// The despawn particle plugin. Required to utilize this crate.
 #[derive(Default)]
 pub struct DespawnParticlesPlugin;
 
@@ -70,7 +70,5 @@ impl Plugin for DespawnParticlesPlugin {
 pub mod prelude {
     pub use crate::events::{DespawnParticlesEvent, DespawnParticlesPreset};
     pub use crate::{DespawnParticlesPlugin, DespawnParticlesSet};
-
-    #[cfg(not(feature = "rapier"))]
-    pub use crate::phys::Friction;
+    pub use crate::components::DespawnParticle;
 }

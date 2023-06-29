@@ -8,12 +8,6 @@ pub struct Velocity {
     pub linvel: Vec2,
 }
 
-#[derive(Resource)]
-pub struct Friction { 
-    pub lin: f32,
-    pub ang: f32,
-}
-
 #[derive(Component, Default, Reflect, FromReflect)]
 #[reflect(Component)]
 pub struct Damping {

@@ -6,12 +6,15 @@ use bevy_rapier2d::prelude::*;
 #[cfg(not(feature = "rapier"))]
 use crate::phys::*;
 
+/// A particle with an expiration
 #[derive(Component)]
 pub struct DespawnParticle {
+    /// When this timer ends, the particle will despawn.
     pub lifetime: Timer,
 }
 
 impl DespawnParticle {
+    /// Create a new despawn particle with the given lifetime
     pub fn new(seconds: f32) -> Self {
         Self {
             lifetime: Timer::from_seconds(seconds, TimerMode::Once),
@@ -25,15 +28,16 @@ impl Default for DespawnParticle {
     }
 }
 
-
+/// A despawn particle that will fade as it approaches its expiration
 #[derive(Component, Default)]
-pub struct FadingDespawnParticle;
+pub(crate) struct FadingDespawnParticle;
 
+/// A despawn particle that will shrink as it approaches its expiration
 #[derive(Component, Default)]
-pub struct ShrinkingDespawnParticle;
+pub(crate) struct ShrinkingDespawnParticle;
 
 #[derive(Bundle)]
-pub struct DespawnParticleBundle {
+pub(crate) struct DespawnParticleBundle {
     pub despawn_particle: DespawnParticle,
     pub mass: AdditionalMassProperties,
     pub velocity: Velocity,

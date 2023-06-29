@@ -19,7 +19,7 @@ use rand::Rng;
 
 
 /// Spawns death particles by creating a particles with a shader that pulls a small portion of the original texture 
-pub fn handle_despawn_particles_event(
+pub(crate) fn handle_despawn_particles_event(
     mut commands: Commands,
     images: Res<Assets<Image>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -221,7 +221,7 @@ pub fn handle_despawn_particles_event(
     }
 }
 
-pub fn handle_despawn_particle(
+pub(crate) fn handle_despawn_particle(
     mut despawn_particles: Query<(Entity, &Handle<DespawnMaterial>, &mut DespawnParticle, &mut Transform, Option<&ShrinkingDespawnParticle>, Option<&FadingDespawnParticle>)>,
     mut despawn_materials: ResMut<Assets<DespawnMaterial>>,
     time: Res<Time>,
