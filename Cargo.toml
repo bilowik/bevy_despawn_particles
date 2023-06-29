@@ -1,12 +1,13 @@
 [package]
 name = "bevy_despawn_particles"
-version = "0.1.0"
+version = "0.1.0-pre.1"
 edition = "2021"
 license = "Unlicense"
 keywords = ["gamedev", "graphics", "bevy", "bevy_plugin"]
 categories = ["game-development"]
 authors = ["bilowik"]
-description = "An event-based system to spawn particles on death built from the targetted sprite"
+description = "An event-based plugin for Bevy to spawn particles on despawn that are built from the original texture"
+repository = "https://github.com/bilowik/bevy_despawn_particles"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -20,4 +21,4 @@ bevy_variable_property = "0.1.0-pre.2"
 
 
 [features]
-rapier = ["dep:bevy_rapier2d"]
+bevy_rapier2d = ["dep:bevy_rapier2d"]
