@@ -25,9 +25,8 @@ pub(crate) fn handle_despawn_particles_event(
     atlases: Res<Assets<TextureAtlas>>,
     global_transforms: Query<&GlobalTransform>,
     mut despawn_materials: ResMut<Assets<DespawnMaterial>>,
-    image_handles: Query<&Handle<Image>>,
-    atlas_handles: Query<(&Handle<TextureAtlas>, &TextureAtlasSprite)>,
-    sprites: Query<AnyOf<(&Sprite, &TextureAtlasSprite)>>,
+    sprites: Query<(&Sprite, &Handle<Image>)>,
+    tass: Query<(&TextureAtlasSprite, &Handle<TextureAtlas>)>,
     mut despawn_particles_event_reader: EventReader<DespawnParticlesEvent>,
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
@@ -72,27 +71,52 @@ pub(crate) fn handle_despawn_particles_event(
                 continue;
             }
 
-            let (sheet_offset, texture_size, image_handle): (Vec2, Vec2, Handle<Image>) =
-                if let Ok(image_handle) = image_handles.get(*entity) {
-                    if let Some(size) = images.get(&image_handle).and_then(|img| Some(img.size())) {
-                        // Single image sprites will use an offset of 0,0
-                        (Default::default(), size, image_handle.clone())
+            // sheet_offset: M,N for texture atlas sprites depending on
+            // the currently active sprite, always 0,0 for regular sprites
+            //
+            // texture_size: The size of the texture being read from. Same as image_size for
+            // sprites, and the active sprite from the spritesheet for the texture
+            // atlas sprite.
+            //
+            // image_size: The size of the entire source texture. output_size for meshes, and the entire
+            // texture size for sprites and texture atlas sprites. 
+            //
+            // output_size: Set to custom_size if one is set for parent, otherwise image_size. 
+            let (sheet_offset, texture_size, image_size, real_size, image_handle): (Vec2, Vec2, Vec2, Vec2, Handle<Image>) =
+                if let Ok((sprite, image_handle)) = sprites.get(*entity) {
+                    let image_size = if let Some(image) = images.get(&image_handle) {
+                        image.size()
                     } else {
                         warn!(
                             "Could not get image data to generate death particles for entity {:?}",
                             entity
                         );
                         continue;
-                    }
-                } else if let Ok((atlas_handle, texture_atlas_sprite)) = atlas_handles.get(*entity)
+                    };
+                    let real_size = sprite.custom_size.unwrap_or(image_size);
+
+                    (Default::default(), image_size, image_size, real_size, image_handle.clone())
+
+                } else if let Ok((tas, ta)) = tass.get(*entity)
                 {
-                    if let Some(atlas) = atlases.get(&atlas_handle) {
-                        if let Some(rect) = atlas.textures.get(texture_atlas_sprite.index) {
-                            (
-                                rect.min,
-                                Vec2::new(rect.width(), rect.height()),
-                                atlas.texture.clone(),
-                            )
+                    if let Some(atlas) = atlases.get(&ta) {
+                        if let Some(rect) = atlas.textures.get(tas.index) {
+                            if let Some(image) = images.get(&atlas.texture) {
+                                let sheet_offset = rect.min;
+                                let texture_size = Vec2::new(rect.width(), rect.height());
+                                let real_size = tas.custom_size.unwrap_or(texture_size);
+                                (
+                                    sheet_offset,
+                                    texture_size,
+                                    image.size(),
+                                    real_size,
+                                    atlas.texture.clone(),
+                                )
+                            }
+                            else {
+                                error!("Atlas has invalid texture, entity {:?}", entity);
+                                continue;
+                            }
                         } else {
                             error!("Invalid texture atlas index for sprite sheet when spawning death particles, entity {:?}", entity);
                             continue;
@@ -112,28 +136,9 @@ pub(crate) fn handle_despawn_particles_event(
                     continue;
                 };
 
-            let image_size = if let Some(size) =
-                images.get(&image_handle).and_then(|img| Some(img.size()))
-            {
-                size
-            } else {
-                error!("Could not get image dimensions while geneating death particles for entity: {:?}", entity);
-                continue;
-            };
-
-            // See if there's a custom size set
-            let custom_size = if let Ok((maybe_sprite, maybe_tas)) = sprites.get(*entity) {
-                maybe_sprite
-                    .and_then(|sprite| sprite.custom_size)
-                    .or(maybe_tas.and_then(|tas| tas.custom_size))
-            } else {
-                None
-            };
 
             if let Ok(transform) = global_transforms.get(*entity) {
                 let transform: Transform = (*transform).into();
-
-                let real_size = custom_size.unwrap_or(texture_size);
 
                 let section_size = (real_size * transform.scale.truncate()) / 8.0;
                 let percent_size = (texture_size * transform.scale.truncate() / 8.0)
