@@ -1,4 +1,41 @@
-use bevy::{ecs::system::EntityCommands, prelude::*, sprite::Mesh2dHandle};
+use core::num::NonZeroU32;
+use bevy::{
+    pbr::MeshPipeline,
+    ecs::system::EntityCommands, 
+    prelude::*, 
+    sprite::Mesh2dHandle,
+    render::{
+        mesh::GpuBufferInfo,
+        renderer::{RenderDevice, RenderQueue},
+        render_asset::RenderAsset,
+        render_resource::{
+            TextureDescriptor, 
+            TextureUsages, 
+            TextureViewDescriptor, 
+            TextureFormat, 
+            TextureDimension, 
+            Extent3d,
+            CommandEncoderDescriptor,
+            RenderPassDescriptor,
+            RenderPassColorAttachment,
+            Operations,
+            LoadOp,
+            BufferDescriptor,
+            ImageCopyTexture,
+            ImageCopyBuffer,
+            BufferAddress,
+            BufferUsages,
+            TextureAspect,
+            Origin3d,
+            ImageDataLayout,
+        },
+    },
+    
+};
+
+use wgpu_types::{
+    Color as WgpuColor,
+};
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
@@ -20,16 +57,20 @@ use rand::Rng;
 /// Spawns death particles by creating a particles with a shader that pulls a small portion of the original texture
 pub(crate) fn handle_despawn_particles_event(
     mut commands: Commands,
-    images: Res<Assets<Image>>,
+    mut images: ResMut<Assets<Image>>,
     mut meshes: ResMut<Assets<Mesh>>,
     atlases: Res<Assets<TextureAtlas>>,
     global_transforms: Query<&GlobalTransform>,
     mut despawn_materials: ResMut<Assets<DespawnMaterial>>,
     sprites: Query<(&Sprite, &Handle<Image>)>,
     tass: Query<(&TextureAtlasSprite, &Handle<TextureAtlas>)>,
+    mesh_components: Query<&Mesh2dHandle>,
     mut despawn_particles_event_reader: EventReader<DespawnParticlesEvent>,
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
+    mut render_device: Res<RenderDevice>,
+    mut render_queue: Res<RenderQueue>,
+    
 ) {
     for DespawnParticlesEvent {
         entity,
@@ -126,6 +167,123 @@ pub(crate) fn handle_despawn_particles_event(
                             "Atlas not found when spawning death particles: entity {:?}",
                             entity
                         );
+                        continue;
+                    }
+                } else if let Ok(mesh_handle) = mesh_components.get(*entity) {
+                    if let Some(mesh) = meshes.get(&mesh_handle.0) {
+                        let aabb = if let Some(aabb) = mesh.compute_aabb() {
+                            aabb
+                        }
+                        else {
+                            warn!("Could not compute aabb for mesh attached to entity {:?}", entity);
+                            continue;
+                        };
+                        let texture_size = Extent3d {
+                            width: (aabb.half_extents.x * 2.0).ceil() as u32,
+                            height: (aabb.half_extents.y * 2.0).ceil() as u32,
+                            depth_or_array_layers: 1,
+                        };
+                        
+
+                        let texture = render_device.create_texture(&TextureDescriptor {
+                            label: Some("despawn_particles_texture"),
+                            view_formats: &[],
+                            size: texture_size,
+                            mip_level_count: 1,
+                            sample_count: 1,
+                            dimension: TextureDimension::D2,
+                            format: TextureFormat::Rgba8Unorm,
+                            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::COPY_SRC 
+                                | TextureUsages::RENDER_ATTACHMENT,
+                        });
+
+                        let u32_size = std::mem::size_of::<u32>() as u32;
+                        let buffer = render_device.create_buffer(&BufferDescriptor {
+                            size: (u32_size * texture_size.width * texture_size.height) as BufferAddress,
+                            usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
+                            label: None,
+                            mapped_at_creation: true,
+                        });
+
+                        let texture_view = texture.create_view(&Default::default());
+                        let gpu_mesh = match Mesh::prepare_asset(mesh.extract_asset(), &mut render_device) {
+                            Ok(gpu_mesh) => gpu_mesh,
+                            Err(_) => {
+                                error!("Could not prepare mesh from entity {:?} for rendering despawn particles", entity);
+                                continue;
+                            }
+                        };
+
+                        let mut command_encoder = render_device.create_command_encoder(&CommandEncoderDescriptor {
+                            label: Some("mesh_to_texture_for_despawn_particle"),
+                        });
+                        let mut pass = command_encoder.begin_render_pass(&RenderPassDescriptor {
+                            color_attachments: &[
+                                Some(RenderPassColorAttachment {
+                                    view: &texture_view,
+                                    resolve_target: None,
+                                    ops: Operations {
+                                        load: LoadOp::Clear(WgpuColor {
+                                            r:0.5,
+                                            g: 0.5,
+                                            b: 0.5,
+                                            a: 1.0,
+                                        }),
+                                        store: true,
+                                        
+                                    },
+                                })
+                            ],
+                            depth_stencil_attachment: None,
+                            label: Some("mesh_to_texture_for_despawn_particle"),
+                        });
+                        //pass.set_pipeline(&render_device.create_render_pipeline(Default::default()));
+
+                        match &gpu_mesh.buffer_info {
+                            GpuBufferInfo::Indexed {
+                                buffer,
+                                index_format,
+                                count,
+                            } => {
+                                pass.set_index_buffer(*buffer.slice(..), *index_format);
+                                pass.draw_indexed(0..*count, 0, 0..1);
+
+                            },
+
+                            GpuBufferInfo::NonIndexed { vertex_count } => {
+                                pass.draw(0..*vertex_count, 0..1); 
+                            }
+                        }
+
+                        std::mem::drop(pass);
+                        command_encoder.copy_texture_to_buffer(
+                            ImageCopyTexture {
+                                aspect: TextureAspect::All,
+                                texture: &texture,
+                                mip_level: 0,
+                                origin: Origin3d::ZERO,
+                            },
+                            ImageCopyBuffer {
+                                buffer: &buffer,
+                                layout: ImageDataLayout {
+                                    offset: 0,
+                                    bytes_per_row: NonZeroU32::new(u32_size * texture_size.width),
+                                    rows_per_image: NonZeroU32::new(u32_size * texture_size.height),
+                                }
+
+                            },
+                            texture_size,
+                        );
+
+                        render_queue.submit(std::iter::once(command_encoder.finish()));
+                        let image_bytes = buffer.slice(..).get_mapped_range();
+                        let image_handle = images.add(Image::new(texture_size, texture.dimension(), (*image_bytes).to_vec(), texture.format()));
+                        let image_size = Vec2::new(texture_size.width as f32, texture_size.height as f32);
+
+                        (Default::default(), image_size, image_size, image_size, image_handle)
+                    }
+                    else {
+                        warn!("Mesh handle on entity {:?} no longer valid, cannot create despawn particles", entity);
                         continue;
                     }
                 } else {
