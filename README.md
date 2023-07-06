@@ -81,4 +81,4 @@ ___
 
 ### FAQ
 #### Does it work with meshes?
-No. And I've spent many days trying to figure out a way to get it to work with absolutely no progress. As far as I can tell and from the response I got from the Bevy discussion pages, this type of operation doesn't make any sense and shouldn't be done. 
+No. And I've spent many days trying to figure out a way to get it to work with absolutely no progress. It requires rendering a Mesh to a Texture, and as far as I can tell and from the response I got from the Bevy discussion pages, this type of operation doesn't make any sense and shouldn't be done. 
