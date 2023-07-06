@@ -78,7 +78,3 @@ ___
 |:--:|
 | In this example the particles shoot outwards from the sprite |
 |![Screencast from 2023-06-28 21-17-34](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/84279fc8-e823-474a-9549-e84dfad6cb9c)|
-
-### FAQ
-#### Does it work with meshes?
-No. And I've spent many days trying to figure out a way to get it to work with absolutely no progress. It requires rendering a Mesh to a Texture, and as far as I can tell and from the response I got from the Bevy discussion pages, this type of operation doesn't make any sense and shouldn't be done. 
