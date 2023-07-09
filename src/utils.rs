@@ -60,3 +60,5 @@ pub fn split_triangle(v: [Vec3; 3], depth: usize, output: &mut Vec<[Vec3; 3]>) {
         }
     }
 }
+
+

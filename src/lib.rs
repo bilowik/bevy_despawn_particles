@@ -14,6 +14,7 @@ pub mod components;
 mod despawn;
 pub mod events;
 mod systems;
+mod triangle_graph;
 
 #[cfg(not(feature = "rapier"))]
 mod phys;

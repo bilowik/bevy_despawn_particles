@@ -1,4 +1,12 @@
-use bevy::{ecs::system::EntityCommands, prelude::*, sprite::Mesh2dHandle};
+use bevy::{
+    ecs::system::EntityCommands, 
+    prelude::*, 
+    sprite::Mesh2dHandle,
+    render::{
+        render_resource::PrimitiveTopology,
+        mesh::VertexAttributeValues,
+    }
+};
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
@@ -8,14 +16,35 @@ use bevy_variable_property::prelude::*;
 #[cfg(not(feature = "rapier"))]
 use crate::phys::{Damping, Velocity};
 
+
 use crate::{
     components::*,
     despawn::{DespawnMaterial, NoDespawnAnimation},
     events::DespawnParticlesEvent,
-    utils::angle_between3,
+    utils::{angle_between3, split_triangle},
 };
 
 use rand::Rng;
+
+#[derive(Debug)]
+pub struct ImageParams {
+    // The image to use in the shader.
+    pub image_handle: Handle<Image>,
+
+    // Top-left bound offset of the image, primarily for sprite sheets
+    pub offset: Vec2, 
+    
+    // The size of the section of the image to pull from. 
+    pub input_size: Vec2, 
+
+    // The size of the entire source texture
+    pub texture_size: Vec2,
+    
+    // The custom_size set by the parent, if applicable. 
+    pub custom_size: Option<Vec2>, 
+}
+
+const NUM_PARTICLES: usize = 16;
 
 /// Spawns death particles by creating a particles with a shader that pulls a small portion of the original texture
 pub(crate) fn handle_despawn_particles_event(
@@ -27,6 +56,7 @@ pub(crate) fn handle_despawn_particles_event(
     mut despawn_materials: ResMut<Assets<DespawnMaterial>>,
     sprites: Query<(&Sprite, &Handle<Image>)>,
     tass: Query<(&TextureAtlasSprite, &Handle<TextureAtlas>)>,
+    mesh_components: Query<&Mesh2dHandle>,
     mut despawn_particles_event_reader: EventReader<DespawnParticlesEvent>,
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
@@ -63,6 +93,7 @@ pub(crate) fn handle_despawn_particles_event(
             |_entity_cmds: &mut EntityCommands| {}
         };
 
+
         if let Some(mut entity_commands) = commands.get_entity(*entity) {
             entity_commands.despawn();
             // Now spawn the death animation, if possible
@@ -70,6 +101,117 @@ pub(crate) fn handle_despawn_particles_event(
                 // We ignore death animations for this object.
                 continue;
             }
+
+            let (mesh_handle, maybe_image_params) = if let Ok((sprite, image_handle)) = sprites.get(*entity) {
+                    let image_size = if let Some(image) = images.get(&image_handle) {
+                        image.size()
+                    } else {
+                        warn!(
+                            "Could not get image data to generate death particles for entity {:?}",
+                            entity
+                        );
+                        continue;
+                    };
+                    let mesh = shape::Quad::new(image_size);
+
+                    (
+                        meshes.add(mesh.into()).into(),
+                        Some(ImageParams {
+                            offset: Vec2::ZERO,
+                            image_handle: image_handle.clone(),
+                            input_size: image_size,
+                            texture_size: image_size,
+                            custom_size: sprite.custom_size,
+                        })
+                    )
+
+            }
+            else if let Ok(mesh_handle) = mesh_components.get(*entity) {
+                (mesh_handle.clone(), None)
+            }
+            else {
+                warn!("Entity {:?} does not have a mesh or sprite to use for particles", entity);
+                continue;
+            };
+
+            // Break the mesh into smaller triangles
+            let triangle_meshes = if let Some(mesh) = meshes.get(&mesh_handle.0) {
+
+                if let PrimitiveTopology::TriangleList = mesh.primitive_topology() {
+                    let vertices = if let Some(vertices) = mesh.attribute(Mesh::ATTRIBUTE_POSITION) {
+                        match vertices {
+                            // We may want to implement this at some point. Add 0.0 Z value and
+                            // create a new Float32x3 vertices.
+                            /*VertexAttributeValues::Float32x2(vertices) => {
+                                vertices 
+                            }*/
+                            VertexAttributeValues::Float32x3(vertices) => {
+                                // For easy math using Vec3's builtin methods, we want to convert
+                                // these over.
+                                vertices.iter().map(|vertex| Vec3::from(*vertex)).collect::<Vec<_>>()
+                            }
+                        
+                            _ => {
+                                warn!("Cannot create despawn particles, unexpected vertex attribute for mesh on entity {:?}", entity);
+                                continue;
+                            }
+                        }
+                    }
+                    else {
+                        warn!("Cannot create despawn particles for a mesh with no vertices: {:?}", entity);
+                        continue;
+                    };
+
+                    let orig_triangles = if let Some(indices) = mesh.indices() {
+                        // We have indices so build triangles from that and the vertices
+                        if indices.len() % 3 != 0 {
+                            warn!("Cannot create despawn particles, mesh has invalid indices on entity {:?}", entity);
+                            continue
+                        }
+                        indices.iter()
+                            .collect::<Vec<_>>()
+                            .as_slice()
+                            .chunks(3)
+                            .map(|chunk| [vertices[chunk[0]], vertices[chunk[1]], vertices[chunk[2]]])
+                            .collect::<Vec<_>>()
+                    }
+                    else {
+                        // We have no indices so we have to build the triangles from the vertices
+                        // alone.
+                        if vertices.len() % 3 != 0 {
+                            warn!("Cannot create despawn particles, mesh has invalid vertices on entity {:?}", entity);
+                            continue
+                        }
+                        // The above check guarantees unwrap does not panic here.
+                        vertices.as_slice().chunks(3).map(|c| <[Vec3; 3]>::try_from(c).unwrap()).collect::<Vec<_>>()
+                    };
+                    let num_triangles = orig_triangles.len();
+                    let triangles = if num_triangles < NUM_PARTICLES {
+                        // We need to break the triangles down further.
+                        let depth = f32::log2(NUM_PARTICLES as f32 / num_triangles as f32).ceil() as usize;
+                        let mut triangles = Vec::with_capacity(num_triangles.pow(depth as u32));
+                        for triangle in orig_triangles.into_iter() {
+                            split_triangle(triangle, depth, &mut triangles);
+                        }
+                        triangles
+                        
+                    }
+                    else {
+                        // TODO: Merge them if they are more than NUM_PARTICLES
+                        // For now, use them as is.
+                        orig_triangles
+                    };
+                }
+                else {
+                    warn!("Cannot create despawn particles for a mesh that does not use a TriangleList topology: {:?}", entity);
+                    continue;
+                }
+            }
+            else {
+                warn!("Cannot create despawn particles, mesh handle on entity {:?} is no longer valid", entity);
+                continue;
+            }
+
 
             // sheet_offset: M,N for texture atlas sprites depending on
             // the currently active sprite, always 0,0 for regular sprites
