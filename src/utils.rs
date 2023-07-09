@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+
 /// Used to get the angle between two points where the reference point is source
 /// IE: Imagine source is (0,0) and target is some (x, y) on the coordinate axis, the angle
 /// calculated here is 0 radians where target is (x, y > 0) and is exactly PI radians
@@ -13,50 +14,35 @@ pub fn angle_between3(source: Vec3, target: Vec3) -> f32 {
     angle_between(source.truncate(), target.truncate())
 }
 
-pub fn split_triangle(v: [Vec3; 3], depth: usize, output: &mut Vec<[Vec3; 3]>) {
-    if depth == 0 {
-        output.push(v);
-    } else {
-        // Get the lengths of the sides.
-        let sides = [
-            v[2].distance(v[3]),
-            v[3].distance(v[1]),
-            v[1].distance(v[2]),
-        ];
 
-        // Get the idx of the point across from the longest side
-        let longest_idx =
-            sides.iter().enumerate().fold(
-                0usize,
-                |acc, (idx, v)| {
-                    if *v >= sides[acc] {
-                        idx
-                    } else {
-                        acc
-                    }
-                },
-            );
+pub fn float32x3_distance(p1: [f32; 3], p2: [f32; 3]) -> f32 {
+    f32::sqrt((0..3).map(|idx| (p2[idx] - p1[idx]).powi(2)).sum())
+}
 
-        // Get the halfway point of this longest side, which is between the two other points
-        let p_mid = (0..3).into_iter().fold(Vec3::ZERO, |acc, curr_idx| {
-            if longest_idx == curr_idx {
-                // Skip, we are ignoring our selected index
-                acc
-            } else {
-                acc + v[curr_idx]
-            }
-        }) / 2.0;
+// Inlining the below two functions to avoid an allocation for the returned array
+// I could be wrong, but we cannot return a value that is stored on the stack bc on return the 
+// stack ptr moves back to its previous position, meaning that Rust must be allocating these arrays
+// on the heap in order to return them.
 
-        // Create the two new triangles
-        let mut triangles = (0..3)
-            .into_iter()
-            .filter(|idx| *idx != longest_idx)
-            .map(|idx| [v[longest_idx], p_mid, v[idx]])
-            .collect::<Vec<_>>();
+#[inline(always)]
+pub fn float32x3_triangle_centroid(tri: [[f32; 3]; 3]) -> [f32; 3] {
+    // We could collcet into a SmallVec but would it be worth the simpler code if we are just gonna
+    // change it back into a [f32; 3] anyway?
+    let mut centroid = [0.0; 3];
+    for idx in 0..3 {
+        centroid[idx] = (tri[0][idx] + tri[1][idx] + tri[2][idx]) / 3.0;
+    }
+    centroid
+    //(0..3).map(|idx| (tri[0][idx] + tri[1][idx] + tri[2][idx]) / 3.0).collect()
+}
 
-        // Split the next two triangles
-        for _ in 0..2 {
-            split_triangle(triangles.pop().unwrap(), depth - 1, output);
-        }
+#[inline(always)]
+pub fn float32x3_sub(v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
+    [v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]]
+}
+
+pub fn debug_meshes(meshes: &[Mesh]) {
+    for mesh in meshes {
+        println!("Pos: {:?}", mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap()); 
     }
 }
