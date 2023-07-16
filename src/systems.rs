@@ -456,7 +456,7 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Spli
         if num_triangles < NUM_PARTICLES {
             // We need to break the triangles down further.
             let depth = f32::log2(target_count as f32 / num_triangles as f32).ceil() as usize;
-            let mut final_meshes = Vec::with_capacity(num_triangles.pow(depth as u32));
+            let mut final_meshes = Vec::with_capacity((num_triangles * 2).pow(depth as u32));
             for mesh in initial_meshes {
                 split_mesh_inner(mesh, depth, &mut final_meshes);
             }
