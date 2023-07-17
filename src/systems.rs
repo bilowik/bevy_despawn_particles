@@ -60,7 +60,8 @@ pub(crate) fn handle_despawn_particles_event(
     mut despawn_materials: ResMut<Assets<DespawnMaterial>>,
     sprites: Query<(&Sprite, &Handle<Image>)>,
     tass: Query<(&TextureAtlasSprite, &Handle<TextureAtlas>)>,
-    mesh_components: Query<&Mesh2dHandle>,
+    mesh_components: Query<(&Mesh2dHandle, Option<&Handle<ColorMaterial>>)>,
+    mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut despawn_particles_event_reader: EventReader<DespawnParticlesEvent>,
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
@@ -106,7 +107,7 @@ pub(crate) fn handle_despawn_particles_event(
                 continue;
             }
 
-            let (mesh_handle, maybe_image_params) = if let Ok((sprite, image_handle)) = sprites.get(*entity) {
+            let (mesh_handle, maybe_image_params, maybe_color_material) = if let Ok((sprite, image_handle)) = sprites.get(*entity) {
                     let image_size = if let Some(image) = images.get(&image_handle) {
                         image.size()
                     } else {
@@ -126,12 +127,23 @@ pub(crate) fn handle_despawn_particles_event(
                             input_size: image_size,
                             texture_size: image_size,
                             custom_size: sprite.custom_size,
-                        })
+                        }),
+                        None,
                     )
 
             }
-            else if let Ok(mesh_handle) = mesh_components.get(*entity) {
-                (mesh_handle.clone(), None)
+            else if let Ok((mesh_handle, maybe_color_material)) = mesh_components.get(*entity) {
+                let base_color = maybe_color_material
+                    .and_then(|handle| color_materials.get(handle))
+                    .and_then(|material| Some(material.color))
+                    .unwrap_or(Color::GRAY);
+                let mixed_shade = base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
+                let mixed_color = Color::rgb(mixed_shade, mixed_shade, mixed_shade);
+                (
+                    mesh_handle.clone(), 
+                    None, 
+                    Some(color_materials.add(ColorMaterial::from(mixed_color))),
+                )
             }
             else {
                 warn!("Entity {:?} does not have a mesh or sprite to use for particles", entity);
@@ -278,13 +290,7 @@ pub(crate) fn handle_despawn_particles_event(
                                 parent_velocity.linvel + additional_velocity_from_angvel
                             }
                             + linvel_addtl.get_value();
-
-                    let material = despawn_materials.add(DespawnMaterial {
-                        alpha: 1.0,
-                        source_image: maybe_image_params.as_ref().and_then(|params| Some(params.image_handle.clone())),
-                        offset: sheet_offset,
-                        size: Vec2::splat(1.0),
-                    });
+                    
 
                     let mut entity_cmds = commands.spawn((
                         DespawnParticleBundle {
@@ -304,15 +310,38 @@ pub(crate) fn handle_despawn_particles_event(
                             ..default()
                         },
                         Mesh2dHandle::from(meshes.add(mesh)),
-                        material,
                         SpatialBundle {
                             transform: particle_transform,
                             ..default()
                         },
                     ));
 
+                    if let Some(image_params) = maybe_image_params.as_ref() {
+                        // We have a texture
+                        let material = despawn_materials.add(DespawnMaterial {
+                            alpha: 1.0,
+                            source_image: Some(image_params.image_handle.clone()),
+                            offset: sheet_offset,
+                            size: Vec2::splat(1.0),
+                        });
+                        entity_cmds.insert(material);
+                    }
+                    else if let Some(color_material_handle) = maybe_color_material.clone() {
+                        // We have no texture, just use color materials
+                        entity_cmds.insert(color_material_handle.clone());
+                        entity_cmds.insert(
+                            OriginalAlpha(
+                                color_materials
+                                  .get(&color_material_handle)
+                                  .and_then(|material| Some(material.color.a()))
+                                  .unwrap_or(1.0)
+                            )
+                        );
+                    }
+
                     shrink_spawn_func(&mut entity_cmds);
                     fade_spawn_func(&mut entity_cmds);
+
                 }
             }
         }
@@ -322,17 +351,18 @@ pub(crate) fn handle_despawn_particles_event(
 pub(crate) fn handle_despawn_particle(
     mut despawn_particles: Query<(
         Entity,
-        &Handle<DespawnMaterial>,
+        AnyOf<(&Handle<DespawnMaterial>, (&Handle<ColorMaterial>, &OriginalAlpha))>,
         &mut DespawnParticle,
         &mut Transform,
         Option<&ShrinkingDespawnParticle>,
         Option<&FadingDespawnParticle>,
     )>,
     mut despawn_materials: ResMut<Assets<DespawnMaterial>>,
+    mut color_materials: ResMut<Assets<ColorMaterial>>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
-    for (entity, material_handle, mut despawn_particle, mut transform, maybe_shrink, maybe_fade) in
+    for (entity, (maybe_despawn_material_handle, maybe_color_material_handle_and_alpha), mut despawn_particle, mut transform, maybe_shrink, maybe_fade) in
         despawn_particles.iter_mut()
     {
         despawn_particle.lifetime.tick(time.delta());
@@ -342,10 +372,13 @@ pub(crate) fn handle_despawn_particle(
             }
         }
         let percent = despawn_particle.lifetime.percent_left();
-        if maybe_fade.is_some() {
-            if let Some(material) = despawn_materials.get_mut(material_handle) {
-                material.alpha = percent;
-            }
+        if let Some(mut despawn_material) = maybe_fade.and_then(|_| maybe_despawn_material_handle).and_then(|handle| despawn_materials.get_mut(handle))  {
+
+            despawn_material.alpha = percent;
+        }
+        else if let Some((color_material, original_alpha)) = maybe_color_material_handle_and_alpha.and_then(|(handle, a)| color_materials.get_mut(handle).zip(Some(a))) {
+            color_material.color.set_a(original_alpha.0 * percent);
+            
         }
         if maybe_shrink.is_some() {
             transform.scale = Vec3::splat(percent);

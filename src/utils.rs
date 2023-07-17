@@ -15,10 +15,6 @@ pub fn angle_between3(source: Vec3, target: Vec3) -> f32 {
 }
 
 
-pub fn float32x3_distance(p1: [f32; 3], p2: [f32; 3]) -> f32 {
-    f32::sqrt((0..3).map(|idx| (p2[idx] - p1[idx]).powi(2)).sum())
-}
-
 // Inlining the below two functions to avoid an allocation for the returned array
 // I could be wrong, but we cannot return a value that is stored on the stack bc on return the 
 // stack ptr moves back to its previous position, meaning that Rust must be allocating these arrays
@@ -36,11 +32,13 @@ pub fn float32x3_triangle_centroid(tri: [[f32; 3]; 3]) -> [f32; 3] {
     //(0..3).map(|idx| (tri[0][idx] + tri[1][idx] + tri[2][idx]) / 3.0).collect()
 }
 
+
 #[inline(always)]
 pub fn float32x3_sub(v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
     [v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]]
 }
 
+#[allow(unused)]
 pub fn debug_meshes(meshes: &[Mesh]) {
     for mesh in meshes {
         println!("Pos: {:?}", mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap()); 
