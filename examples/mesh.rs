@@ -23,53 +23,74 @@ fn main() {
 
 fn setup(
     mut commands: Commands, 
-    mut color_materials: ResMut<Assets<ColorMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    color_materials: ResMut<Assets<ColorMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
 ) {
     commands.spawn(Camera2dBundle::default());
-    commands
-        .spawn(ColorMesh2dBundle {
-            material: color_materials.add(ColorMaterial::from(Color::BLUE)),
-            mesh: meshes.add(Mesh::from(shape::RegularPolygon::new(128.0, 3))).into(),
-            ..default()
-        })
-        .insert(Marker);
+    spawn_meshes(commands, color_materials, meshes);
 }
 
 fn tick(
     mut timer: Local<MyTimer>,
     time: Res<Time>,
     mut despawn_particles_event_writer: EventWriter<DespawnParticlesEvent>,
-    mut commands: Commands,
-    mut color_materials: ResMut<Assets<ColorMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    commands: Commands,
+    color_materials: ResMut<Assets<ColorMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
     marker: Query<Entity, With<Marker>>,
 ) {
     timer.0.tick(time.delta());
     if timer.0.just_finished() {
-        if let Ok(entity) = marker.get_single() {
-            despawn_particles_event_writer.send(
-                DespawnParticlesEvent::builder()
-                    .with_fade(false)
-                    .with_shrink(false)
-                    .with_linvel(100.0..150.0)
-                    .with_angvel(-0.5..0.5)
-                    .with_lifetime(1.0)
-                    .with_angular_damping(5.0)
-                    .with_linear_damping(8.0)
-                    .build(entity),
-            );
+        if !marker.is_empty() {
+            for entity in marker.iter() {
+                despawn_particles_event_writer.send(
+                    DespawnParticlesEvent::builder()
+                        .with_fade(false)
+                        .with_shrink(false)
+                        .with_linvel(150.0..250.0)
+                        .with_angvel(0.0)
+                        .with_lifetime(1.0)
+                        .with_angular_damping(5.0)
+                        .with_linear_damping(8.0)
+                        .build(entity),
+                );
+            }
             timer.0 = Timer::from_seconds(1.2, TimerMode::Once);
             timer.0.reset();
         } else {
-            commands
-                .spawn(ColorMesh2dBundle {
-                    material: color_materials.add(ColorMaterial::from(Color::BLUE)),
-            mesh: meshes.add(Mesh::from(shape::RegularPolygon::new(128.0, 3))).into(),
-                    ..default()
-                })
-                .insert(Marker);
+            spawn_meshes(commands, color_materials, meshes);
             timer.0 = Timer::from_seconds(0.5, TimerMode::Once);
         }
     }
+}
+
+
+fn spawn_meshes(
+    mut commands: Commands,
+    mut color_materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    commands
+        .spawn(ColorMesh2dBundle {
+            material: color_materials.add(ColorMaterial::from(Color::BLUE)),
+            mesh: meshes.add(Mesh::from(shape::RegularPolygon::new(128.0, 3))).into(),
+            transform: Transform {
+                translation: Vec3::new(-256.0, 0.0, 0.0),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Marker);
+    commands
+        .spawn(ColorMesh2dBundle {
+            material: color_materials.add(ColorMaterial::from(Color::BLUE)),
+            mesh: meshes.add(Mesh::from(shape::Quad::new(Vec2::new(128.0, 128.0)))).into(),
+            transform: Transform {
+                translation: Vec3::new(256.0, 0.0, 0.0),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Marker);
+
 }
