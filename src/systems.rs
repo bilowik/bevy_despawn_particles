@@ -407,14 +407,8 @@ pub enum SplitMeshError {
     #[error("Encountered an unexepcted PrimitiveTopology, expected PrimitiveTopology")]
     UnexpectedPrimitiveTopology,
 
-    #[error("Unexpected number of TriangleList vertices with no indices set: {0}")]
-    UnexpectedVertexCount(usize),
-
     #[error("Unexpected number of TriangleList indices: {0}, should be divisible by 3")]
     UnexpectedIndexCount(usize),
-
-    #[error("UV attribute count does not match the vertex count {0} != {1}")]
-    InvalidUvCount(usize, usize),
 
     #[error("Unexpected format for position attribute of mesh, expected Float32x3")]
     UnexpectedPositionAttributeFormat,
