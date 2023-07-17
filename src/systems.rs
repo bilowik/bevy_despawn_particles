@@ -16,6 +16,7 @@ use bevy_rapier2d::prelude::*;
 use bevy_variable_property::prelude::*;
 
 use thiserror::Error;
+use smallvec::SmallVec;
 
 #[cfg(not(feature = "rapier"))]
 use crate::phys::{Damping, Velocity};
@@ -477,6 +478,7 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Spli
 
 // Mesh is assumed to have a TriangleList topology with a valid number of indices and vertices
 // Will try to break the given mesh into at least target_count meshes.
+// Mesh is also assumed to be a single Triangle
 fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
     if depth == 0 {
         // Re-center the triangle around origin, and use that translation as the offset. 
@@ -486,7 +488,7 @@ fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
         
         // Get the vertices and uvs, it is assumed this is checked prior.
         // Convert them here so they do not have to be converted more than once below.
-        let vertices = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+        let raw_vertices = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
             .unwrap()
             .as_float3()
             .unwrap()
@@ -502,8 +504,10 @@ fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
             return;
         };
 
-        for curr_indices in mesh.indices().unwrap().iter().collect::<Vec<usize>>().as_slice().chunks(3) {
-            let v = [vertices[curr_indices[0]], vertices[curr_indices[1]], vertices[curr_indices[2]]];
+        let indices = mesh.indices().unwrap().iter().collect::<SmallVec<[usize; 3]>>();
+        let v = [raw_vertices[indices[0]], raw_vertices[indices[1]], raw_vertices[indices[2]]];
+
+        if depth == 1 {
             let sides = [
                 v[1].distance(v[2]),
                 v[2].distance(v[0]),
@@ -544,16 +548,45 @@ fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
                 mesh.set_indices(Some(Indices::U32(vec![0, 1, 2])));
                 split_mesh_inner(mesh, depth - 1, output);
             }
+        }
+        else {
+            // depth is >= 2
+            // For cleaner breaks, we want to split each triangle into 4 equal triangles by
+            // connecting each side's midpoint.
+            
+            // idx of 0 corresponds to the midpoint of the side opposite of that point
+            let mps = [
+                (v[1] + v[2]) / 2.0,
+                (v[2] + v[0]) / 2.0,
+                (v[0] + v[1]) / 2.0,
+            ];
 
-//            // Split the next two triangles
-//            for _ in 0..2 {
-//                let (triangle, uvs) = triangles.pop().unwrap();
-//                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-//                mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, triangle.to_vec());
-//                mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs.to_vec());
-//                mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]);
-//                split_mesh_inner(mesh, depth - 1, output);
-//            }
+            let mps_uvs = [
+                (uvs[1] + uvs[2]) / 2.0,
+                (uvs[2] + uvs[0]) / 2.0,
+                (uvs[0] + uvs[1]) / 2.0,
+            ];
+
+            for (vertices, uvs) in [
+                (vec![v[0], mps[1], mps[2]], vec![uvs[0], mps_uvs[1], mps_uvs[2]]),
+                (vec![v[1], mps[0], mps[2]], vec![uvs[1], mps_uvs[0], mps_uvs[2]]),
+                (vec![v[2], mps[0], mps[1]], vec![uvs[2], mps_uvs[0], mps_uvs[1]]),
+                (vec![mps[0], mps[1], mps[2]], vec![mps_uvs[0], mps_uvs[1], mps_uvs[2]]),
+            ] {
+                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+                mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]);
+                mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+                mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+                mesh.set_indices(Some(Indices::U32(vec![0, 1, 2])));
+                
+                // depth - 2 here since we broke 1 triangle into 4 instead of just 2.
+                split_mesh_inner(mesh, depth - 2, output);
+
+            }
+
+
+
+
         }
     }
 }
