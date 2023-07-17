@@ -22,7 +22,7 @@ fn main() {
 }
 
 fn setup(
-    mut commands: Commands, 
+    mut commands: Commands,
     color_materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
 ) {
@@ -64,7 +64,6 @@ fn tick(
     }
 }
 
-
 fn spawn_meshes(
     mut commands: Commands,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
@@ -73,7 +72,9 @@ fn spawn_meshes(
     commands
         .spawn(ColorMesh2dBundle {
             material: color_materials.add(ColorMaterial::from(Color::BLUE)),
-            mesh: meshes.add(Mesh::from(shape::RegularPolygon::new(128.0, 3))).into(),
+            mesh: meshes
+                .add(Mesh::from(shape::RegularPolygon::new(128.0, 3)))
+                .into(),
             transform: Transform {
                 translation: Vec3::new(-256.0, 0.0, 0.0),
                 ..default()
@@ -84,7 +85,9 @@ fn spawn_meshes(
     commands
         .spawn(ColorMesh2dBundle {
             material: color_materials.add(ColorMaterial::from(Color::BLUE)),
-            mesh: meshes.add(Mesh::from(shape::Quad::new(Vec2::new(128.0, 128.0)))).into(),
+            mesh: meshes
+                .add(Mesh::from(shape::Quad::new(Vec2::new(128.0, 128.0))))
+                .into(),
             transform: Transform {
                 translation: Vec3::new(256.0, 0.0, 0.0),
                 ..default()
@@ -92,5 +95,4 @@ fn spawn_meshes(
             ..default()
         })
         .insert(Marker);
-
 }

@@ -1,34 +1,30 @@
 use bevy::{
-    ecs::system::EntityCommands, 
-    prelude::*, 
-    sprite::Mesh2dHandle,
+    ecs::system::EntityCommands,
+    prelude::*,
     render::{
+        mesh::{Indices, VertexAttributeValues},
         render_resource::PrimitiveTopology,
-        mesh::{VertexAttributeValues, Indices},
-    }
+    },
+    sprite::Mesh2dHandle,
 };
-
-
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
 
 use bevy_variable_property::prelude::*;
 
-use thiserror::Error;
 use smallvec::SmallVec;
+use thiserror::Error;
 
 #[cfg(not(feature = "rapier"))]
 use crate::phys::{Damping, Velocity};
-
 
 use crate::{
     components::*,
     despawn::{DespawnMaterial, NoDespawnAnimation},
     events::DespawnParticlesEvent,
-    utils::{angle_between3, float32x3_triangle_centroid, float32x3_sub},
+    utils::{angle_between3, float32x3_sub, float32x3_triangle_centroid},
 };
-
 
 #[derive(Debug)]
 pub struct ImageParams {
@@ -36,16 +32,16 @@ pub struct ImageParams {
     pub image_handle: Handle<Image>,
 
     // Top-left bound offset of the image, primarily for sprite sheets
-    pub offset: Vec2, 
-    
-    // The size of the section of the image to pull from. 
-    pub input_size: Vec2, 
+    pub offset: Vec2,
+
+    // The size of the section of the image to pull from.
+    pub input_size: Vec2,
 
     // The size of the entire source texture
     pub texture_size: Vec2,
-    
-    // The custom_size set by the parent, if applicable. 
-    pub custom_size: Option<Vec2>, 
+
+    // The custom_size set by the parent, if applicable.
+    pub custom_size: Option<Vec2>,
 }
 
 const NUM_PARTICLES: usize = 16;
@@ -98,7 +94,6 @@ pub(crate) fn handle_despawn_particles_event(
             |_entity_cmds: &mut EntityCommands| {}
         };
 
-
         if let Some(mut entity_commands) = commands.get_entity(*entity) {
             entity_commands.despawn();
             // Now spawn the death animation, if possible
@@ -107,7 +102,8 @@ pub(crate) fn handle_despawn_particles_event(
                 continue;
             }
 
-            let (mesh_handle, maybe_image_params, maybe_color_material) = if let Ok((sprite, image_handle)) = sprites.get(*entity) {
+            let (mesh_handle, maybe_image_params, maybe_color_material) =
+                if let Ok((sprite, image_handle)) = sprites.get(*entity) {
                     let image_size = if let Some(image) = images.get(&image_handle) {
                         image.size()
                     } else {
@@ -130,51 +126,58 @@ pub(crate) fn handle_despawn_particles_event(
                         }),
                         None,
                     )
-
-            }
-            else if let Ok((mesh_handle, maybe_color_material)) = mesh_components.get(*entity) {
-                let base_color = maybe_color_material
-                    .and_then(|handle| color_materials.get(handle))
-                    .and_then(|material| Some(material.color))
-                    .unwrap_or(Color::GRAY);
-                let mixed_shade = base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
-                let mixed_color = Color::rgb(mixed_shade, mixed_shade, mixed_shade);
-                (
-                    mesh_handle.clone(), 
-                    None, 
-                    Some(color_materials.add(ColorMaterial::from(mixed_color))),
-                )
-            }
-            else {
-                warn!("Entity {:?} does not have a mesh or sprite to use for particles", entity);
-                continue;
-            };
+                } else if let Ok((mesh_handle, maybe_color_material)) = mesh_components.get(*entity)
+                {
+                    let base_color = maybe_color_material
+                        .and_then(|handle| color_materials.get(handle))
+                        .and_then(|material| Some(material.color))
+                        .unwrap_or(Color::GRAY);
+                    let mixed_shade =
+                        base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
+                    let mixed_color = Color::rgb(mixed_shade, mixed_shade, mixed_shade);
+                    (
+                        mesh_handle.clone(),
+                        None,
+                        Some(color_materials.add(ColorMaterial::from(mixed_color))),
+                    )
+                } else {
+                    warn!(
+                        "Entity {:?} does not have a mesh or sprite to use for particles",
+                        entity
+                    );
+                    continue;
+                };
 
             // Break the mesh into smaller triangles
             let triangle_meshes = if let Some(mut mesh) = meshes.get(&mesh_handle.0).cloned() {
-
                 if let PrimitiveTopology::TriangleList = mesh.primitive_topology() {
-                    let vertices = if let Some(vertices) = mesh.attribute(Mesh::ATTRIBUTE_POSITION) {
+                    let vertices = if let Some(vertices) = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+                    {
                         match vertices {
                             // We may want to implement this at some point. Add 0.0 Z value and
                             // create a new Float32x3 vertices.
                             /*VertexAttributeValues::Float32x2(vertices) => {
-                                vertices 
+                                vertices
                             }*/
                             VertexAttributeValues::Float32x3(vertices) => {
                                 // For easy math using Vec3's builtin methods, we want to convert
                                 // these over.
-                                vertices.iter().map(|vertex| Vec3::from(*vertex)).collect::<Vec<_>>()
+                                vertices
+                                    .iter()
+                                    .map(|vertex| Vec3::from(*vertex))
+                                    .collect::<Vec<_>>()
                             }
-                        
+
                             _ => {
                                 warn!("Cannot create despawn particles, unexpected vertex attribute for mesh on entity {:?}", entity);
                                 continue;
                             }
                         }
-                    }
-                    else {
-                        warn!("Cannot create despawn particles for a mesh with no vertices: {:?}", entity);
+                    } else {
+                        warn!(
+                            "Cannot create despawn particles for a mesh with no vertices: {:?}",
+                            entity
+                        );
                         continue;
                     };
 
@@ -184,22 +187,26 @@ pub(crate) fn handle_despawn_particles_event(
                             warn!("Cannot create despawn particles, mesh has invalid indices on entity {:?}", entity);
                             continue;
                         }
-                    }
-                    else {
+                    } else {
                         // We have no indices, so add them by hand and return the number of
                         // triangles after
                         if vertices.len() % 3 != 0 {
                             warn!("Cannot create despawn particles, mesh has invalid vertices on entity {:?}", entity);
                             continue;
                         }
-                        mesh.set_indices(Some(Indices::U32((0..(vertices.len() as u32)).collect())));
+                        mesh.set_indices(Some(Indices::U32(
+                            (0..(vertices.len() as u32)).collect(),
+                        )));
                     };
-                
+
                     // Break down the triangles into individual meshes
                     let meshes = match split_mesh(mesh, NUM_PARTICLES) {
                         Ok(meshes) => meshes,
                         Err(e) => {
-                            warn!("Failed to split mesh for despawn particles: {}; entity = {:?}", e, entity);
+                            warn!(
+                                "Failed to split mesh for despawn particles: {}; entity = {:?}",
+                                e, entity
+                            );
                             continue;
                         }
                     };
@@ -207,90 +214,92 @@ pub(crate) fn handle_despawn_particles_event(
                     // Re-center the triangles around the origin, saving that offset for the
                     // Transform
                     // We can assume every mesh has TriangleList topology and proper indices.
-                    
-                    meshes.into_iter().map(|mut mesh| {
-                        // These unwraps are guaranteed safe
-                        let vertices: [[f32; 3]; 3] = mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap().as_float3().unwrap().try_into().unwrap();
-                        
-                        // Get the centroid of the triangle, we will use this to translate this
-                        // mesh to the origin
-                        let centroid = float32x3_triangle_centroid(vertices);
-                        
-                        // Translate the triangle around the origin point using the centroid.
-                        // Collect into a Vec since it will be converted to this for the mesh
-                        // anyway.
-                        let new_vertices = vertices.iter().map(|v| float32x3_sub(*v, centroid)).collect::<Vec<_>>();
 
-                        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, new_vertices);
-                        (mesh, Vec3::from(centroid))
+                    meshes
+                        .into_iter()
+                        .map(|mut mesh| {
+                            // These unwraps are guaranteed safe
+                            let vertices: [[f32; 3]; 3] = mesh
+                                .attribute(Mesh::ATTRIBUTE_POSITION)
+                                .unwrap()
+                                .as_float3()
+                                .unwrap()
+                                .try_into()
+                                .unwrap();
 
-                    })
-                    .collect::<Vec<_>>()
-                }
-                else {
+                            // Get the centroid of the triangle, we will use this to translate this
+                            // mesh to the origin
+                            let centroid = float32x3_triangle_centroid(vertices);
+
+                            // Translate the triangle around the origin point using the centroid.
+                            // Collect into a Vec since it will be converted to this for the mesh
+                            // anyway.
+                            let new_vertices = vertices
+                                .iter()
+                                .map(|v| float32x3_sub(*v, centroid))
+                                .collect::<Vec<_>>();
+
+                            mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, new_vertices);
+                            (mesh, Vec3::from(centroid))
+                        })
+                        .collect::<Vec<_>>()
+                } else {
                     warn!("Cannot create despawn particles for a mesh that does not use a TriangleList topology: {:?}", entity);
                     continue;
                 }
-            }
-            else {
+            } else {
                 warn!("Cannot create despawn particles, mesh handle on entity {:?} is no longer valid", entity);
                 continue;
             };
 
-
             if let Ok(orig_transform) = global_transforms.get(*entity) {
                 let orig_transform: Transform = (*orig_transform).into();
                 let center_point = orig_transform.translation;
-                
+
                 // scale to apply to each new mesh
-                let scalar = if let Some(custom_size) = maybe_image_params.as_ref().and_then(|m| m.custom_size) { 
+                let scalar = if let Some(custom_size) =
+                    maybe_image_params.as_ref().and_then(|m| m.custom_size)
+                {
                     custom_size / maybe_image_params.as_ref().unwrap().input_size
-                }
-                else {
+                } else {
                     orig_transform.scale.truncate()
                 };
 
-
                 for (mesh, offset) in triangle_meshes {
-
-
                     let sheet_offset = maybe_image_params
                         .as_ref()
                         .and_then(|params| Some(params.offset / params.texture_size))
                         .unwrap_or(Vec2::ZERO);
 
-                    let translation = center_point
-                        + orig_transform.rotation.normalize().mul_vec3(offset);
+                    let translation =
+                        center_point + orig_transform.rotation.normalize().mul_vec3(offset);
                     let angle = angle_between3(center_point, translation);
-                        //+ rand::thread_rng().gen_range(-0.8..0.8);
+                    //+ rand::thread_rng().gen_range(-0.8..0.8);
                     let parent_velocity = velocities.get(*entity).copied().unwrap_or_default();
-                    
+
                     let particle_transform = Transform {
                         translation,
                         rotation: orig_transform.rotation,
-                        scale: scalar.extend(1.0)
+                        scale: scalar.extend(1.0),
                     };
 
                     let vel_scalar = linvel.get_value();
-                    let velocity =
-                        Vec2::new(vel_scalar * angle.sin(), vel_scalar * angle.cos())
-                            + if *ignore_parent_phys {
-                                Vec2::ZERO
-                            } else {
-                                // Use the parent's last known angvel to calculate additional linear
-                                // velocity
-                                let perp_angle = angle - (std::f32::consts::PI / 2.0);
-                                let radius = center_point.distance(translation);
-                                let total_velocity_from_angvel =
-                                    radius * parent_velocity.angvel;
-                                let additional_velocity_from_angvel = Vec2::new(
-                                    total_velocity_from_angvel * perp_angle.sin(),
-                                    total_velocity_from_angvel * perp_angle.cos(),
-                                );
-                                parent_velocity.linvel + additional_velocity_from_angvel
-                            }
-                            + linvel_addtl.get_value();
-                    
+                    let velocity = Vec2::new(vel_scalar * angle.sin(), vel_scalar * angle.cos())
+                        + if *ignore_parent_phys {
+                            Vec2::ZERO
+                        } else {
+                            // Use the parent's last known angvel to calculate additional linear
+                            // velocity
+                            let perp_angle = angle - (std::f32::consts::PI / 2.0);
+                            let radius = center_point.distance(translation);
+                            let total_velocity_from_angvel = radius * parent_velocity.angvel;
+                            let additional_velocity_from_angvel = Vec2::new(
+                                total_velocity_from_angvel * perp_angle.sin(),
+                                total_velocity_from_angvel * perp_angle.cos(),
+                            );
+                            parent_velocity.linvel + additional_velocity_from_angvel
+                        }
+                        + linvel_addtl.get_value();
 
                     let mut entity_cmds = commands.spawn((
                         DespawnParticleBundle {
@@ -325,23 +334,19 @@ pub(crate) fn handle_despawn_particles_event(
                             size: Vec2::splat(1.0),
                         });
                         entity_cmds.insert(material);
-                    }
-                    else if let Some(color_material_handle) = maybe_color_material.clone() {
+                    } else if let Some(color_material_handle) = maybe_color_material.clone() {
                         // We have no texture, just use color materials
                         entity_cmds.insert(color_material_handle.clone());
-                        entity_cmds.insert(
-                            OriginalAlpha(
-                                color_materials
-                                  .get(&color_material_handle)
-                                  .and_then(|material| Some(material.color.a()))
-                                  .unwrap_or(1.0)
-                            )
-                        );
+                        entity_cmds.insert(OriginalAlpha(
+                            color_materials
+                                .get(&color_material_handle)
+                                .and_then(|material| Some(material.color.a()))
+                                .unwrap_or(1.0),
+                        ));
                     }
 
                     shrink_spawn_func(&mut entity_cmds);
                     fade_spawn_func(&mut entity_cmds);
-
                 }
             }
         }
@@ -351,7 +356,10 @@ pub(crate) fn handle_despawn_particles_event(
 pub(crate) fn handle_despawn_particle(
     mut despawn_particles: Query<(
         Entity,
-        AnyOf<(&Handle<DespawnMaterial>, (&Handle<ColorMaterial>, &OriginalAlpha))>,
+        AnyOf<(
+            &Handle<DespawnMaterial>,
+            (&Handle<ColorMaterial>, &OriginalAlpha),
+        )>,
         &mut DespawnParticle,
         &mut Transform,
         Option<&ShrinkingDespawnParticle>,
@@ -362,8 +370,14 @@ pub(crate) fn handle_despawn_particle(
     time: Res<Time>,
     mut commands: Commands,
 ) {
-    for (entity, (maybe_despawn_material_handle, maybe_color_material_handle_and_alpha), mut despawn_particle, mut transform, maybe_shrink, maybe_fade) in
-        despawn_particles.iter_mut()
+    for (
+        entity,
+        (maybe_despawn_material_handle, maybe_color_material_handle_and_alpha),
+        mut despawn_particle,
+        mut transform,
+        maybe_shrink,
+        maybe_fade,
+    ) in despawn_particles.iter_mut()
     {
         despawn_particle.lifetime.tick(time.delta());
         if despawn_particle.lifetime.finished() {
@@ -372,13 +386,15 @@ pub(crate) fn handle_despawn_particle(
             }
         }
         let percent = despawn_particle.lifetime.percent_left();
-        if let Some(mut despawn_material) = maybe_fade.and_then(|_| maybe_despawn_material_handle).and_then(|handle| despawn_materials.get_mut(handle))  {
-
+        if let Some(mut despawn_material) = maybe_fade
+            .and_then(|_| maybe_despawn_material_handle)
+            .and_then(|handle| despawn_materials.get_mut(handle))
+        {
             despawn_material.alpha = percent;
-        }
-        else if let Some((color_material, original_alpha)) = maybe_color_material_handle_and_alpha.and_then(|(handle, a)| color_materials.get_mut(handle).zip(Some(a))) {
+        } else if let Some((color_material, original_alpha)) = maybe_color_material_handle_and_alpha
+            .and_then(|(handle, a)| color_materials.get_mut(handle).zip(Some(a)))
+        {
             color_material.color.set_a(original_alpha.0 * percent);
-            
         }
         if maybe_shrink.is_some() {
             transform.scale = Vec3::splat(percent);
@@ -393,7 +409,7 @@ pub enum SplitMeshError {
 
     #[error("Unexpected number of TriangleList vertices with no indices set: {0}")]
     UnexpectedVertexCount(usize),
-    
+
     #[error("Unexpected number of TriangleList indices: {0}, should be divisible by 3")]
     UnexpectedIndexCount(usize),
 
@@ -408,10 +424,9 @@ pub enum SplitMeshError {
 
     #[error("Mesh has no vertices")]
     MissingVertices,
-    
+
     #[error("Mesh has no uvs")]
     MissingUvs,
-
 }
 
 pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, SplitMeshError> {
@@ -421,64 +436,74 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Spli
                 // We may want to implement this at some point. Add 0.0 Z value and
                 // create a new Float32x3 vertices.
                 /*VertexAttributeValues::Float32x2(vertices) => {
-                    vertices 
+                    vertices
                 }*/
                 VertexAttributeValues::Float32x3(vertices) => {
                     // For easy math using Vec3's builtin methods, we want to convert
                     // these over.
-                    vertices.iter().map(|vertex| Vec3::from(*vertex)).collect::<Vec<_>>()
+                    vertices
+                        .iter()
+                        .map(|vertex| Vec3::from(*vertex))
+                        .collect::<Vec<_>>()
                 }
-            
+
                 _ => {
                     return Err(SplitMeshError::UnexpectedPositionAttributeFormat);
                 }
             }
-        }
-        else {
+        } else {
             return Err(SplitMeshError::MissingVertices);
         };
-        
-        let indices = if let Some(indices) = mesh.indices().and_then(|indices| Some(indices.iter().collect::<Vec<_>>())) {
+
+        let indices = if let Some(indices) = mesh
+            .indices()
+            .and_then(|indices| Some(indices.iter().collect::<Vec<_>>()))
+        {
             if indices.len() % 3 != 0 {
                 return Err(SplitMeshError::UnexpectedIndexCount(indices.len()));
             }
             indices
-        }
-        else {
+        } else {
             // No indices provided, add them in
             let indices = (0..vertices.len()).collect::<Vec<_>>();
-            mesh.set_indices(Some(Indices::U32(indices.iter().map(|i| *i as u32).collect::<Vec<_>>())));
+            mesh.set_indices(Some(Indices::U32(
+                indices.iter().map(|i| *i as u32).collect::<Vec<_>>(),
+            )));
             indices
         };
-        
+
         // Get the UVs
         let uvs = if let Some(uvs) = mesh.attribute(Mesh::ATTRIBUTE_UV_0) {
             if let VertexAttributeValues::Float32x2(uvs) = uvs {
                 uvs
-            }
-            else {
+            } else {
                 return Err(SplitMeshError::UnexpectedUvAttributeFormat);
             }
-
-        }
-        else {
+        } else {
             return Err(SplitMeshError::MissingUvs);
         };
 
-        
         let initial_meshes = indices
             .as_slice()
             .chunks(3)
             .map(|indices| {
                 let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
 
-                mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, indices.iter().map(|idx| vertices[*idx]).collect::<Vec<_>>());
-                mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, indices.iter().map(|idx| uvs[*idx]).collect::<Vec<_>>());
-                mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]);
+                mesh.insert_attribute(
+                    Mesh::ATTRIBUTE_POSITION,
+                    indices.iter().map(|idx| vertices[*idx]).collect::<Vec<_>>(),
+                );
+                mesh.insert_attribute(
+                    Mesh::ATTRIBUTE_UV_0,
+                    indices.iter().map(|idx| uvs[*idx]).collect::<Vec<_>>(),
+                );
+                mesh.insert_attribute(
+                    Mesh::ATTRIBUTE_NORMAL,
+                    vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]],
+                );
 
                 mesh.set_indices(Some(Indices::U32(vec![0, 1, 2])));
                 mesh
-                    
             })
             .collect::<Vec<_>>();
         let num_triangles = initial_meshes.len();
@@ -486,7 +511,7 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Spli
         // This could be simplified if we just clamp the depth to [0.0, f32::MAX] and always call
         // split_mesh_inner, but we save a lot of extra processing if we just do this one if
         // statement, so I think this will be much more efficient in cases where we already have enough
-        // triangles and only very slightly less efficient in cases where we do have to call it. 
+        // triangles and only very slightly less efficient in cases where we do have to call it.
         if num_triangles < NUM_PARTICLES {
             // We need to break the triangles down further.
             let depth = f32::log2(target_count as f32 / num_triangles as f32).ceil() as usize;
@@ -496,17 +521,13 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Spli
             }
 
             Ok(final_meshes)
-                
-        }
-        else {
+        } else {
             // We have enough meshes, so just return them.
             Ok(initial_meshes)
         }
-    }
-    else {
+    } else {
         Err(SplitMeshError::UnexpectedPrimitiveTopology)
     }
-
 }
 
 // Mesh is assumed to have a TriangleList topology with a valid number of indices and vertices
@@ -514,31 +535,40 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Spli
 // Mesh is also assumed to be a single Triangle
 fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
     if depth == 0 {
-        // Re-center the triangle around origin, and use that translation as the offset. 
+        // Re-center the triangle around origin, and use that translation as the offset.
         //let p_center = v.iter().fold(Vec3::new(), |acc, v| acc + v
         output.push(mesh);
     } else {
-        
         // Get the vertices and uvs, it is assumed this is checked prior.
         // Convert them here so they do not have to be converted more than once below.
-        let raw_vertices = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+        let raw_vertices = mesh
+            .attribute(Mesh::ATTRIBUTE_POSITION)
             .unwrap()
             .as_float3()
             .unwrap()
             .iter()
             .map(|v| Vec3::from(*v))
             .collect::<Vec<_>>();
-        let uvs = if let VertexAttributeValues::Float32x2(uvs) = mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap() {
+        let uvs = if let VertexAttributeValues::Float32x2(uvs) =
+            mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap()
+        {
             uvs.iter().map(|v| Vec2::from(*v)).collect::<Vec<_>>()
-        }
-        else {
+        } else {
             // This should never occur.
-            warn!("Unexpected type for UV_0 attribute"); 
+            warn!("Unexpected type for UV_0 attribute");
             return;
         };
 
-        let indices = mesh.indices().unwrap().iter().collect::<SmallVec<[usize; 3]>>();
-        let v = [raw_vertices[indices[0]], raw_vertices[indices[1]], raw_vertices[indices[2]]];
+        let indices = mesh
+            .indices()
+            .unwrap()
+            .iter()
+            .collect::<SmallVec<[usize; 3]>>();
+        let v = [
+            raw_vertices[indices[0]],
+            raw_vertices[indices[1]],
+            raw_vertices[indices[2]],
+        ];
 
         if depth == 1 {
             let sides = [
@@ -561,32 +591,43 @@ fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
                 );
 
             // Get the halfway point of this longest side, which is between the two other points
-            let (p_mid, uv_mid) = (0..3).into_iter().fold((Vec3::ZERO, Vec2::ZERO), |acc, curr_idx| {
-                if longest_idx == curr_idx {
-                    // Skip, we are ignoring our selected index
-                    acc
-                } else {
-                    (acc.0 + v[curr_idx], acc.1 + uvs[curr_idx])
-                }
-            });
-            
+            let (p_mid, uv_mid) =
+                (0..3)
+                    .into_iter()
+                    .fold((Vec3::ZERO, Vec2::ZERO), |acc, curr_idx| {
+                        if longest_idx == curr_idx {
+                            // Skip, we are ignoring our selected index
+                            acc
+                        } else {
+                            (acc.0 + v[curr_idx], acc.1 + uvs[curr_idx])
+                        }
+                    });
+
             let (p_mid, uv_mid) = (p_mid / 2.0, uv_mid / 2.0);
 
             // Create the two new triangles
             for idx in (0..3).filter(|idx| *idx != longest_idx) {
                 let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-                mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]);
-                mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, [v[longest_idx], p_mid, v[idx]].to_vec());
-                mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, [uvs[longest_idx], uv_mid, uvs[idx]].to_vec());
+                mesh.insert_attribute(
+                    Mesh::ATTRIBUTE_NORMAL,
+                    vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]],
+                );
+                mesh.insert_attribute(
+                    Mesh::ATTRIBUTE_POSITION,
+                    [v[longest_idx], p_mid, v[idx]].to_vec(),
+                );
+                mesh.insert_attribute(
+                    Mesh::ATTRIBUTE_UV_0,
+                    [uvs[longest_idx], uv_mid, uvs[idx]].to_vec(),
+                );
                 mesh.set_indices(Some(Indices::U32(vec![0, 1, 2])));
                 split_mesh_inner(mesh, depth - 1, output);
             }
-        }
-        else {
+        } else {
             // depth is >= 2
             // For cleaner breaks, we want to split each triangle into 4 equal triangles by
             // connecting each side's midpoint.
-            
+
             // idx of 0 corresponds to the midpoint of the side opposite of that point
             let mps = [
                 (v[1] + v[2]) / 2.0,
@@ -601,27 +642,35 @@ fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
             ];
 
             for (vertices, uvs) in [
-                (vec![v[0], mps[1], mps[2]], vec![uvs[0], mps_uvs[1], mps_uvs[2]]),
-                (vec![v[1], mps[0], mps[2]], vec![uvs[1], mps_uvs[0], mps_uvs[2]]),
-                (vec![v[2], mps[0], mps[1]], vec![uvs[2], mps_uvs[0], mps_uvs[1]]),
-                (vec![mps[0], mps[1], mps[2]], vec![mps_uvs[0], mps_uvs[1], mps_uvs[2]]),
+                (
+                    vec![v[0], mps[1], mps[2]],
+                    vec![uvs[0], mps_uvs[1], mps_uvs[2]],
+                ),
+                (
+                    vec![v[1], mps[0], mps[2]],
+                    vec![uvs[1], mps_uvs[0], mps_uvs[2]],
+                ),
+                (
+                    vec![v[2], mps[0], mps[1]],
+                    vec![uvs[2], mps_uvs[0], mps_uvs[1]],
+                ),
+                (
+                    vec![mps[0], mps[1], mps[2]],
+                    vec![mps_uvs[0], mps_uvs[1], mps_uvs[2]],
+                ),
             ] {
                 let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-                mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]);
+                mesh.insert_attribute(
+                    Mesh::ATTRIBUTE_NORMAL,
+                    vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]],
+                );
                 mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
                 mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
                 mesh.set_indices(Some(Indices::U32(vec![0, 1, 2])));
-                
+
                 // depth - 2 here since we broke 1 triangle into 4 instead of just 2.
                 split_mesh_inner(mesh, depth - 2, output);
-
             }
-
-
-
-
         }
     }
 }
-
-

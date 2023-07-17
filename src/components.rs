@@ -62,8 +62,7 @@ impl Default for DespawnParticleBundle {
     }
 }
 
-
-/// Used for ColorMaterial meshes to track what the original alpha value 
+/// Used for ColorMaterial meshes to track what the original alpha value
 /// was so it can be properly mixed during fading.
 #[derive(Component)]
 pub struct OriginalAlpha(pub f32);
