@@ -102,51 +102,86 @@ pub(crate) fn handle_despawn_particles_event(
                 continue;
             }
 
-            let (mesh_handle, maybe_image_params, maybe_color_material) =
-                if let Ok((sprite, image_handle)) = sprites.get(*entity) {
-                    let image_size = if let Some(image) = images.get(&image_handle) {
-                        image.size()
-                    } else {
-                        warn!(
-                            "Could not get image data to generate death particles for entity {:?}",
-                            entity
-                        );
-                        continue;
-                    };
-                    let mesh = shape::Quad::new(image_size);
-
-                    (
-                        meshes.add(mesh.into()).into(),
-                        Some(ImageParams {
-                            offset: Vec2::ZERO,
-                            image_handle: image_handle.clone(),
-                            input_size: image_size,
-                            texture_size: image_size,
-                            custom_size: sprite.custom_size,
-                        }),
-                        None,
-                    )
-                } else if let Ok((mesh_handle, maybe_color_material)) = mesh_components.get(*entity)
-                {
-                    let base_color = maybe_color_material
-                        .and_then(|handle| color_materials.get(handle))
-                        .and_then(|material| Some(material.color))
-                        .unwrap_or(Color::GRAY);
-                    let mixed_shade =
-                        base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
-                    let mixed_color = Color::rgb(mixed_shade, mixed_shade, mixed_shade);
-                    (
-                        mesh_handle.clone(),
-                        None,
-                        Some(color_materials.add(ColorMaterial::from(mixed_color))),
-                    )
+            let (mesh_handle, maybe_image_params, maybe_color_material) = if let Ok((
+                sprite,
+                image_handle,
+            )) =
+                sprites.get(*entity)
+            {
+                let image_size = if let Some(image) = images.get(&image_handle) {
+                    image.size()
                 } else {
                     warn!(
-                        "Entity {:?} does not have a mesh or sprite to use for particles",
+                        "Could not get image data to generate despawn particles for entity {:?}",
                         entity
                     );
                     continue;
                 };
+                let mesh = shape::Quad::new(image_size);
+
+                (
+                    meshes.add(mesh.into()).into(),
+                    Some(ImageParams {
+                        offset: Vec2::ZERO,
+                        image_handle: image_handle.clone(),
+                        input_size: image_size,
+                        texture_size: image_size,
+                        custom_size: sprite.custom_size,
+                    }),
+                    None,
+                )
+            } else if let Ok((tas, ta_handle)) = tass.get(*entity) {
+                if let Some(atlas) = atlases.get(ta_handle) {
+                    if let Some(rect) = atlas.textures.get(tas.index) {
+                        if let Some(image) = images.get(&atlas.texture) {
+                            let input_size = Vec2::new(rect.width(), rect.height());
+                            let mesh = shape::Quad::new(input_size);
+                            (
+                                meshes.add(mesh.into()).into(),
+                                Some(ImageParams {
+                                    offset: rect.min,
+                                    image_handle: atlas.texture.clone(),
+                                    input_size,
+                                    texture_size: image.size(),
+                                    custom_size: tas.custom_size,
+                                }),
+                                None,
+                            )
+                        } else {
+                            warn!("Cannot generate despawn particles, invalid image handle for texture atlas on entity: {:?}", entity);
+                            continue;
+                        }
+                    } else {
+                        warn!("Cannot generate despawn particles, invalid texture atlas index for entity: {:?}", entity);
+                        continue;
+                    }
+                } else {
+                    warn!(
+                        "Could not get atlas to generate particles for entity {:?}",
+                        entity
+                    );
+                    continue;
+                }
+            } else if let Ok((mesh_handle, maybe_color_material)) = mesh_components.get(*entity) {
+                let base_color = maybe_color_material
+                    .and_then(|handle| color_materials.get(handle))
+                    .and_then(|material| Some(material.color))
+                    .unwrap_or(Color::GRAY);
+                let mixed_shade =
+                    base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
+                let mixed_color = Color::rgb(mixed_shade, mixed_shade, mixed_shade);
+                (
+                    mesh_handle.clone(),
+                    None,
+                    Some(color_materials.add(ColorMaterial::from(mixed_color))),
+                )
+            } else {
+                warn!(
+                    "Entity {:?} does not have a mesh or sprite to use for particles",
+                    entity
+                );
+                continue;
+            };
 
             // Break the mesh into smaller triangles
             let triangle_meshes = if let Some(mut mesh) = meshes.get(&mesh_handle.0).cloned() {
@@ -266,11 +301,6 @@ pub(crate) fn handle_despawn_particles_event(
                 };
 
                 for (mesh, offset) in triangle_meshes {
-                    let sheet_offset = maybe_image_params
-                        .as_ref()
-                        .and_then(|params| Some(params.offset / params.texture_size))
-                        .unwrap_or(Vec2::ZERO);
-
                     let translation =
                         center_point + orig_transform.rotation.normalize().mul_vec3(offset);
                     let angle = angle_between3(center_point, translation);
@@ -330,8 +360,8 @@ pub(crate) fn handle_despawn_particles_event(
                         let material = despawn_materials.add(DespawnMaterial {
                             alpha: 1.0,
                             source_image: Some(image_params.image_handle.clone()),
-                            offset: sheet_offset,
-                            size: Vec2::splat(1.0),
+                            offset: (image_params.offset / image_params.texture_size),
+                            size: (image_params.input_size / image_params.texture_size),
                         });
                         entity_cmds.insert(material);
                     } else if let Some(color_material_handle) = maybe_color_material.clone() {
