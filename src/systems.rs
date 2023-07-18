@@ -305,12 +305,8 @@ pub(crate) fn handle_despawn_particles_event(
                 for (mesh, offset) in triangle_meshes {
                     let addtl_translation = maybe_image_params
                         .as_ref()
-                        .and_then(|p| {
-                            p.custom_size
-                                .and_then(|size| Some(size / p.input_size))
-                                .or(Some(Vec2::ONE))
-                        })
-                        .unwrap();
+                        .and_then(|p| p.custom_size.and_then(|size| Some(size / p.input_size)))
+                        .unwrap_or(Vec2::ONE);
                     let translation = (center_point
                         + orig_transform.rotation.normalize().mul_vec3(offset))
                         * orig_transform.scale
