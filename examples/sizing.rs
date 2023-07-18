@@ -40,8 +40,12 @@ fn main() {
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
-    spawn(commands, asset_server, RandomSize::default().0.get_value(), RandomScale::default().0.get_value());
-    
+    spawn(
+        commands,
+        asset_server,
+        RandomSize::default().0.get_value(),
+        RandomScale::default().0.get_value(),
+    );
 }
 
 fn tick(
@@ -70,26 +74,21 @@ fn tick(
             timer.0 = Timer::from_seconds(1.2, TimerMode::Once);
             timer.0.reset();
         } else {
-            spawn(commands, asset_server, size.0.get_value(), scale.0.get_value());
+            spawn(
+                commands,
+                asset_server,
+                size.0.get_value(),
+                scale.0.get_value(),
+            );
             timer.0 = Timer::from_seconds(0.5, TimerMode::Once);
         }
     }
 }
 
-
-fn spawn(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    size: Vec2,
-    scale: Vec3,
-) {
-
+fn spawn(mut commands: Commands, asset_server: Res<AssetServer>, size: Vec2, scale: Vec3) {
     commands
-        .spawn(SpriteBundle{
-            transform: Transform {
-                scale,
-                ..default()
-            },
+        .spawn(SpriteBundle {
+            transform: Transform { scale, ..default() },
             texture: asset_server.load("asteroid_round.png"),
             sprite: Sprite {
                 custom_size: Some(size),
@@ -98,5 +97,4 @@ fn spawn(
             ..default()
         })
         .insert(Marker);
-
 }

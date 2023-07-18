@@ -21,10 +21,13 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>, atlases: ResMut<Assets<TextureAtlas>>) {
+fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    atlases: ResMut<Assets<TextureAtlas>>,
+) {
     commands.spawn(Camera2dBundle::default());
     spawn(commands, atlases, asset_server);
-    
 }
 
 fn tick(
@@ -58,7 +61,6 @@ fn tick(
     }
 }
 
-
 fn spawn(
     mut commands: Commands,
     mut atlases: ResMut<Assets<TextureAtlas>>,
@@ -71,15 +73,14 @@ fn spawn(
                 ..default()
             },
             texture_atlas: atlases.add(TextureAtlas::from_grid(
-                    asset_server.load("asteroid_sheet_test.png"),
-                    Vec2::splat(64.),
-                    1,
-                    4,
-                    None,
-                    None,
+                asset_server.load("asteroid_sheet_test.png"),
+                Vec2::splat(64.),
+                1,
+                4,
+                None,
+                None,
             )),
             ..default()
         })
         .insert(Marker);
-
 }

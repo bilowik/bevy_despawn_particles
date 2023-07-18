@@ -292,18 +292,29 @@ pub(crate) fn handle_despawn_particles_event(
                 let center_point = orig_transform.translation;
 
                 // scale to apply to each new mesh
-                let scale = orig_transform.scale * maybe_image_params
-                    .as_ref()
-                    .and_then(|params| params.custom_size.and_then(|size| 
-                              Some((size / params.input_size).extend(1.0))))
-                    .unwrap_or(Vec3::ONE);
+                let scale = orig_transform.scale
+                    * maybe_image_params
+                        .as_ref()
+                        .and_then(|params| {
+                            params
+                                .custom_size
+                                .and_then(|size| Some((size / params.input_size).extend(1.0)))
+                        })
+                        .unwrap_or(Vec3::ONE);
 
                 for (mesh, offset) in triangle_meshes {
                     let addtl_translation = maybe_image_params
                         .as_ref()
-                        .and_then(|p| p.custom_size.and_then(|size| Some(size / p.input_size)).or(Some(Vec2::ONE)))
+                        .and_then(|p| {
+                            p.custom_size
+                                .and_then(|size| Some(size / p.input_size))
+                                .or(Some(Vec2::ONE))
+                        })
                         .unwrap();
-                    let translation = (center_point + orig_transform.rotation.normalize().mul_vec3(offset)) * orig_transform.scale * addtl_translation.extend(1.0);
+                    let translation = (center_point
+                        + orig_transform.rotation.normalize().mul_vec3(offset))
+                        * orig_transform.scale
+                        * addtl_translation.extend(1.0);
                     let angle = angle_between3(center_point, translation);
                     let parent_velocity = velocities.get(*entity).copied().unwrap_or_default();
 
