@@ -18,6 +18,7 @@ impl DespawnParticlesPreset {
             shrink: self.shrink,
             fade: self.fade,
             mesh_override: self.mesh_override.clone(),
+            target_num_particles: self.target_num_particles.clone(),
         }
     }
 }
@@ -69,6 +70,8 @@ pub struct DespawnParticlesEvent {
 
     /// Use this mesh over the one used by the entity
     pub mesh_override: Option<Handle<Mesh>>,
+
+    pub target_num_particles: Property<usize>,
 }
 
 /// The builder struct for [DespawnParticlesEvent], typically this should be instantiated with
@@ -86,6 +89,7 @@ pub struct DespawnParticlesEventBuilder {
     pub shrink: bool,
     pub fade: bool,
     pub mesh_override: Option<Handle<Mesh>>,
+    pub target_num_particles: Property<usize>,
 }
 
 impl DespawnParticlesEvent {
@@ -108,6 +112,7 @@ impl DespawnParticlesEventBuilder {
             shrink: false,
             fade: false,
             mesh_override: None,
+            target_num_particles: 64.into(),
         }
     }
 
@@ -171,6 +176,16 @@ impl DespawnParticlesEventBuilder {
         self
     }
 
+    pub fn with_mesh_override(mut self, mesh_override: Handle<Mesh>) -> Self {
+        self.mesh_override = Some(mesh_override);
+        self
+    }
+    /// See [DespawnParticlesEvent::target_num_particles]
+    pub fn with_target_num_particles<T: Into<Property<usize>>>(mut self, v: T) -> Self {
+        self.target_num_particles = v.into();
+        self
+    }
+
     pub fn build(self, entity: Entity) -> DespawnParticlesEvent {
         DespawnParticlesEvent {
             entity,
@@ -185,6 +200,7 @@ impl DespawnParticlesEventBuilder {
             shrink: self.shrink,
             fade: self.fade,
             mesh_override: self.mesh_override,
+            target_num_particles: self.target_num_particles,
         }
     }
 }
