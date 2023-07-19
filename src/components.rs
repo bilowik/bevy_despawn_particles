@@ -1,4 +1,10 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    render::{
+        render_resource::PrimitiveTopology,
+        mesh::Indices,
+    }
+};
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
@@ -70,5 +76,45 @@ pub struct OriginalAlpha(pub f32);
 impl Default for OriginalAlpha {
     fn default() -> Self {
         Self(1.0)
+    }
+}
+
+#[derive(Component, Reflect, FromReflect, Default)]
+#[reflect(Component)]
+pub struct DespawnMeshOverride(pub Handle<Mesh>);
+
+impl DespawnMeshOverride {
+    pub fn faux_circle(meshes: &mut Assets<Mesh>, radius: f32, sides: u32) -> Self {
+        let vertices = std::iter::once([0.0, 0.0, 0.0])
+            .chain(
+                (0..sides)
+                    .map(|v| (v as f32) * (2.0 / sides as f32) * std::f32::consts::PI)
+                    .map(|angle: f32| [angle.cos() * radius, angle.sin() * radius, 0.0]),
+            )
+            .collect::<Vec<_>>();
+
+        let indices = (0..(sides as u32 - 1))
+            .map(|idx| [0, idx + 1, idx + 2])
+            .chain(std::iter::once([0, sides, 1]))
+            .flatten()
+            .collect::<Vec<_>>();
+        let normals = (0..sides + 1).map(|_| [0.0, 0.0, 1.0]).collect::<Vec<_>>();
+       
+
+        // Calculate UVs by creating a box around this shape and calculating the percent offsets.
+        let top_left = (-((radius * 2.0f32.sqrt()).cos()), (radius * 2.0f32.sqrt()).sin());
+        let bottom_right = (-top_left.0, -top_left.1);
+        let mid = (bottom_right.0 - top_left.0, bottom_right.1 - top_left.1);
+        let uvs = vertices
+            .iter()
+            .map(|[x, y, _]| [(x - top_left.0) / mid.0, (y - top_left.1) / mid.1])
+            .collect::<Vec<_>>();
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        mesh.set_indices(Some(Indices::U32(indices)));
+
+        Self(meshes.add(mesh))
     }
 }
