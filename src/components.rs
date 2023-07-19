@@ -79,12 +79,21 @@ impl Default for OriginalAlpha {
     }
 }
 
+/// When present on an Entity, will override the underlying Mesh when creating the
+/// despawn particles. Targetted mostly towards circles since the way they are built do 
+/// not break down in a way similar to other shapes. 
 #[derive(Component, Reflect, FromReflect, Default)]
 #[reflect(Component)]
 pub struct DespawnMeshOverride(pub Handle<Mesh>);
 
 impl DespawnMeshOverride {
-
+    /// Creates a polygon inscribed in circle with the given radius, with the indices and vertices
+    /// set up in a way to break apart in a cleaner way. 
+    /// 
+    /// For a circle, 9-13 sides is sufficient, going higher will yield more sliver particles.
+    ///
+    /// See the circle's in examples/mesh.rs for a visualization of the difference.
+    ///
     pub fn faux_circle(meshes: &mut Assets<Mesh>, radius: f32, sides: u32) -> Self {
         let vertices = std::iter::once([0.0, 0.0, 0.0])
             .chain(
