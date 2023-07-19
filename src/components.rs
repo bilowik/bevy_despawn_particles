@@ -84,6 +84,7 @@ impl Default for OriginalAlpha {
 pub struct DespawnMeshOverride(pub Handle<Mesh>);
 
 impl DespawnMeshOverride {
+
     pub fn faux_circle(meshes: &mut Assets<Mesh>, radius: f32, sides: u32) -> Self {
         let vertices = std::iter::once([0.0, 0.0, 0.0])
             .chain(
@@ -102,13 +103,12 @@ impl DespawnMeshOverride {
        
 
         // Calculate UVs by creating a box around this shape and calculating the percent offsets.
-        let top_left = (-((radius * 2.0f32.sqrt()).cos()), (radius * 2.0f32.sqrt()).sin());
-        let bottom_right = (-top_left.0, -top_left.1);
-        let mid = (bottom_right.0 - top_left.0, bottom_right.1 - top_left.1);
+        let diameter = radius * 2.0;
         let uvs = vertices
             .iter()
-            .map(|[x, y, _]| [(x - top_left.0) / mid.0, (y - top_left.1) / mid.1])
+            .map(|[x, y, _]| [(x + radius) / diameter, (y - radius) / (-diameter)])
             .collect::<Vec<_>>();
+        
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
