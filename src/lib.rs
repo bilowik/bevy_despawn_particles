@@ -67,7 +67,7 @@ impl Plugin for DespawnParticlesPlugin {
 }
 
 pub mod prelude {
-    pub use crate::components::{DespawnParticle, DespawnMeshOverride};
+    pub use crate::components::{DespawnMeshOverride, DespawnParticle};
     pub use crate::events::{DespawnParticlesEvent, DespawnParticlesPreset};
     pub use crate::{DespawnParticlesPlugin, DespawnParticlesSet};
 }

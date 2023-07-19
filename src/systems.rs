@@ -171,7 +171,8 @@ pub(crate) fn handle_despawn_particles_event(
                     .unwrap_or(Color::GRAY);
                 let mixed_shade =
                     base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
-                let mixed_color = Color::rgba(mixed_shade, mixed_shade, mixed_shade, base_color.a());
+                let mixed_color =
+                    Color::rgba(mixed_shade, mixed_shade, mixed_shade, base_color.a());
                 (
                     mesh_handle.clone(),
                     None,
@@ -184,11 +185,16 @@ pub(crate) fn handle_despawn_particles_event(
                 );
                 continue;
             };
-                
+
             // Find which mesh to use.
             let mesh_handle = event_mesh_override
                 .clone()
-                .or_else(|| despawn_mesh_overrides.get(*entity).and_then(|c| Ok(c.0.clone())).ok())
+                .or_else(|| {
+                    despawn_mesh_overrides
+                        .get(*entity)
+                        .and_then(|c| Ok(c.0.clone()))
+                        .ok()
+                })
                 .unwrap_or(mesh_handle.0);
 
             // Break the mesh into smaller triangles

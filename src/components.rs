@@ -1,9 +1,6 @@
 use bevy::{
     prelude::*,
-    render::{
-        render_resource::PrimitiveTopology,
-        mesh::Indices,
-    }
+    render::{mesh::Indices, render_resource::PrimitiveTopology},
 };
 
 #[cfg(feature = "rapier")]
@@ -80,16 +77,16 @@ impl Default for OriginalAlpha {
 }
 
 /// When present on an Entity, will override the underlying Mesh when creating the
-/// despawn particles. Targetted mostly towards circles since the way they are built do 
-/// not break down in a way similar to other shapes. 
+/// despawn particles. Targetted mostly towards circles since the way they are built do
+/// not break down in a way similar to other shapes.
 #[derive(Component, Reflect, FromReflect, Default)]
 #[reflect(Component)]
 pub struct DespawnMeshOverride(pub Handle<Mesh>);
 
 impl DespawnMeshOverride {
     /// Creates a polygon inscribed in circle with the given radius, with the indices and vertices
-    /// set up in a way to break apart in a cleaner way. 
-    /// 
+    /// set up in a way to break apart in a cleaner way.
+    ///
     /// For a circle, 9-13 sides is sufficient, going higher will yield more sliver particles.
     ///
     /// See the circle's in examples/mesh.rs for a visualization of the difference.
@@ -109,7 +106,6 @@ impl DespawnMeshOverride {
             .flatten()
             .collect::<Vec<_>>();
         let normals = (0..sides + 1).map(|_| [0.0, 0.0, 1.0]).collect::<Vec<_>>();
-       
 
         // Calculate UVs by creating a box around this shape and calculating the percent offsets.
         let diameter = radius * 2.0;
@@ -117,7 +113,7 @@ impl DespawnMeshOverride {
             .iter()
             .map(|[x, y, _]| [(x + radius) / diameter, (y - radius) / (-diameter)])
             .collect::<Vec<_>>();
-        
+
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);

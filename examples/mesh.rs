@@ -88,7 +88,9 @@ fn spawn_meshes(
         .spawn(ColorMesh2dBundle {
             material: color_materials.add(ColorMaterial::from(Color::BLUE)),
             mesh: meshes
-                .add(Mesh::from(shape::Quad::new(Vec2::splat(128.0 * 2.0f32.sqrt()))))
+                .add(Mesh::from(shape::Quad::new(Vec2::splat(
+                    128.0 * 2.0f32.sqrt(),
+                ))))
                 .into(),
             transform: Transform {
                 translation: Vec3::new(320.0, 0.0, 0.0),
@@ -104,9 +106,7 @@ fn spawn_meshes(
                 ..default()
             },
             material: color_materials.add(ColorMaterial::from(Color::BLUE)),
-            mesh: meshes
-                .add(Mesh::from(shape::Circle::new(128.0)))
-                .into(),
+            mesh: meshes.add(Mesh::from(shape::Circle::new(128.0))).into(),
             ..default()
         })
         .insert(Marker);
@@ -117,9 +117,7 @@ fn spawn_meshes(
                 ..default()
             },
             material: color_materials.add(ColorMaterial::from(Color::BLUE)),
-            mesh: meshes
-                .add(Mesh::from(shape::Circle::new(128.0)))
-                .into(),
+            mesh: meshes.add(Mesh::from(shape::Circle::new(128.0))).into(),
             ..default()
         })
         .insert(DespawnMeshOverride::faux_circle(&mut meshes, 128.0, 13))
