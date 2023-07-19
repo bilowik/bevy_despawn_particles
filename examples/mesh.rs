@@ -73,7 +73,7 @@ fn spawn_meshes(
 ) {
     commands
         .spawn(ColorMesh2dBundle {
-            material: color_materials.add(ColorMaterial::from(Color::BLUE)),
+            material: color_materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 1.0, 0.5))),
             mesh: meshes
                 .add(Mesh::from(shape::RegularPolygon::new(128.0, 3)))
                 .into(),

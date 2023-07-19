@@ -27,7 +27,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct ImageParams {
+struct ImageParams {
     // The image to use in the shader.
     pub image_handle: Handle<Image>,
 
@@ -171,7 +171,7 @@ pub(crate) fn handle_despawn_particles_event(
                     .unwrap_or(Color::GRAY);
                 let mixed_shade =
                     base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
-                let mixed_color = Color::rgb(mixed_shade, mixed_shade, mixed_shade);
+                let mixed_color = Color::rgba(mixed_shade, mixed_shade, mixed_shade, base_color.a());
                 (
                     mesh_handle.clone(),
                     None,
