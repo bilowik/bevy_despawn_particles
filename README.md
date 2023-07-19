@@ -1,8 +1,6 @@
 An event-based plugin for the Bevy game engine that provides a simple way to add a despawn effect for 2D sprites. 
 Contains a basic physics implementation or a feature for bevy_rapier integration.
 
-At the moment this will work with Sprites and TextureAtlasSprites but will not work with meshes. 
-
 ```rust
 use bevy::prelude::*;
 use bevy_despawn_particles::prelude::*;
