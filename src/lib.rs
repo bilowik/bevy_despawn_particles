@@ -28,7 +28,7 @@ use systems::{handle_despawn_particle, handle_despawn_particles_event};
 #[derive(Default)]
 pub struct DespawnParticlesPlugin;
 
-/// The SystemSet that the flicker systems belong to.
+/// The SystemSet that the despawn particle systems belong to.
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct DespawnParticlesSet;
 
