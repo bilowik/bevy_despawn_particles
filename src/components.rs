@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    render::{mesh::Indices, render_resource::PrimitiveTopology},
+};
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
@@ -65,10 +68,58 @@ impl Default for DespawnParticleBundle {
 /// Used for ColorMaterial meshes to track what the original alpha value
 /// was so it can be properly mixed during fading.
 #[derive(Component)]
-pub struct OriginalAlpha(pub f32);
+pub(crate) struct OriginalAlpha(pub f32);
 
 impl Default for OriginalAlpha {
     fn default() -> Self {
         Self(1.0)
+    }
+}
+
+/// When present on an Entity, will override the underlying Mesh when creating the
+/// despawn particles. Targetted mostly towards circles since the way they are built do
+/// not break down in a way similar to other shapes.
+#[derive(Component, Reflect, FromReflect, Default)]
+#[reflect(Component)]
+pub struct DespawnMeshOverride(pub Handle<Mesh>);
+
+impl DespawnMeshOverride {
+    /// Creates a polygon inscribed in circle with the given radius, with the indices and vertices
+    /// set up in a way to break apart in a cleaner way.
+    ///
+    /// For a circle, 9-13 sides is sufficient, going higher will yield more sliver particles.
+    ///
+    /// See the circle's in examples/mesh.rs for a visualization of the difference.
+    ///
+    pub fn faux_circle(meshes: &mut Assets<Mesh>, radius: f32, sides: u32) -> Self {
+        let vertices = std::iter::once([0.0, 0.0, 0.0])
+            .chain(
+                (0..sides)
+                    .map(|v| (v as f32) * (2.0 / sides as f32) * std::f32::consts::PI)
+                    .map(|angle: f32| [angle.cos() * radius, angle.sin() * radius, 0.0]),
+            )
+            .collect::<Vec<_>>();
+
+        let indices = (0..(sides as u32 - 1))
+            .map(|idx| [0, idx + 1, idx + 2])
+            .chain(std::iter::once([0, sides, 1]))
+            .flatten()
+            .collect::<Vec<_>>();
+        let normals = (0..sides + 1).map(|_| [0.0, 0.0, 1.0]).collect::<Vec<_>>();
+
+        // Calculate UVs by creating a box around this shape and calculating the percent offsets.
+        let diameter = radius * 2.0;
+        let uvs = vertices
+            .iter()
+            .map(|[x, y, _]| [(x + radius) / diameter, (y - radius) / (-diameter)])
+            .collect::<Vec<_>>();
+
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        mesh.set_indices(Some(Indices::U32(indices)));
+
+        Self(meshes.add(mesh))
     }
 }

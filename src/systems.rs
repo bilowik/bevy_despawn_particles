@@ -27,7 +27,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct ImageParams {
+struct ImageParams {
     // The image to use in the shader.
     pub image_handle: Handle<Image>,
 
@@ -61,6 +61,7 @@ pub(crate) fn handle_despawn_particles_event(
     mut despawn_particles_event_reader: EventReader<DespawnParticlesEvent>,
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
+    despawn_mesh_overrides: Query<&DespawnMeshOverride>,
 ) {
     for DespawnParticlesEvent {
         entity,
@@ -74,6 +75,7 @@ pub(crate) fn handle_despawn_particles_event(
         mass,
         shrink,
         fade,
+        mesh_override: event_mesh_override,
     } in despawn_particles_event_reader.iter()
     {
         // Use closures so we don't have to re-do the if statement for every single particle.
@@ -169,7 +171,8 @@ pub(crate) fn handle_despawn_particles_event(
                     .unwrap_or(Color::GRAY);
                 let mixed_shade =
                     base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
-                let mixed_color = Color::rgb(mixed_shade, mixed_shade, mixed_shade);
+                let mixed_color =
+                    Color::rgba(mixed_shade, mixed_shade, mixed_shade, base_color.a());
                 (
                     mesh_handle.clone(),
                     None,
@@ -183,8 +186,19 @@ pub(crate) fn handle_despawn_particles_event(
                 continue;
             };
 
+            // Find which mesh to use.
+            let mesh_handle = event_mesh_override
+                .clone()
+                .or_else(|| {
+                    despawn_mesh_overrides
+                        .get(*entity)
+                        .and_then(|c| Ok(c.0.clone()))
+                        .ok()
+                })
+                .unwrap_or(mesh_handle.0);
+
             // Break the mesh into smaller triangles
-            let triangle_meshes = if let Some(mut mesh) = meshes.get(&mesh_handle.0).cloned() {
+            let triangle_meshes = if let Some(mut mesh) = meshes.get(&mesh_handle).cloned() {
                 if let PrimitiveTopology::TriangleList = mesh.primitive_topology() {
                     let vertices = if let Some(vertices) = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
                     {

@@ -1,3 +1,5 @@
+/// Breaks apart meshes that do not have textures, also showcases that use of the
+/// DespawnMeshOverride to make Circle meshes break apart cleaner.
 use bevy::prelude::*;
 use bevy_despawn_particles::prelude::*;
 
@@ -71,12 +73,12 @@ fn spawn_meshes(
 ) {
     commands
         .spawn(ColorMesh2dBundle {
-            material: color_materials.add(ColorMaterial::from(Color::BLUE)),
+            material: color_materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 1.0, 0.5))),
             mesh: meshes
                 .add(Mesh::from(shape::RegularPolygon::new(128.0, 3)))
                 .into(),
             transform: Transform {
-                translation: Vec3::new(-256.0, 0.0, 0.0),
+                translation: Vec3::new(-320.0, 0.0, 0.0),
                 ..default()
             },
             ..default()
@@ -86,13 +88,38 @@ fn spawn_meshes(
         .spawn(ColorMesh2dBundle {
             material: color_materials.add(ColorMaterial::from(Color::BLUE)),
             mesh: meshes
-                .add(Mesh::from(shape::Quad::new(Vec2::new(128.0, 128.0))))
+                .add(Mesh::from(shape::Quad::new(Vec2::splat(
+                    128.0 * 2.0f32.sqrt(),
+                ))))
                 .into(),
             transform: Transform {
-                translation: Vec3::new(256.0, 0.0, 0.0),
+                translation: Vec3::new(320.0, 0.0, 0.0),
                 ..default()
             },
             ..default()
         })
+        .insert(Marker);
+    commands
+        .spawn(ColorMesh2dBundle {
+            transform: Transform {
+                translation: Vec3::new(0.0, -192.0, 0.0),
+                ..default()
+            },
+            material: color_materials.add(ColorMaterial::from(Color::BLUE)),
+            mesh: meshes.add(Mesh::from(shape::Circle::new(128.0))).into(),
+            ..default()
+        })
+        .insert(Marker);
+    commands
+        .spawn(ColorMesh2dBundle {
+            transform: Transform {
+                translation: Vec3::new(0.0, 192.0, 0.0),
+                ..default()
+            },
+            material: color_materials.add(ColorMaterial::from(Color::BLUE)),
+            mesh: meshes.add(Mesh::from(shape::Circle::new(128.0))).into(),
+            ..default()
+        })
+        .insert(DespawnMeshOverride::faux_circle(&mut meshes, 128.0, 13))
         .insert(Marker);
 }
