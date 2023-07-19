@@ -44,7 +44,7 @@ pub struct ImageParams {
     pub custom_size: Option<Vec2>,
 }
 
-const NUM_PARTICLES: usize = 16;
+const NUM_PARTICLES: usize = 64;
 
 /// Spawns death particles by creating a particles with a shader that pulls a small portion of the original texture
 pub(crate) fn handle_despawn_particles_event(
