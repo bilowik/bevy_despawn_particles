@@ -185,7 +185,7 @@ pub(crate) fn handle_despawn_particles_event(
             };
 
             // Break the mesh into smaller triangles
-            let triangle_meshes = if let Some(mut mesh) = meshes.get(&mesh_handle.0).cloned() {
+            let triangle_meshes = if let Some(mut mesh) = meshes.get(&mesh_override.clone().unwrap_or(mesh_handle.0)).cloned() {
                 if let PrimitiveTopology::TriangleList = mesh.primitive_topology() {
                     let vertices = if let Some(vertices) = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
                     {
