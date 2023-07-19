@@ -58,23 +58,27 @@ All the following examples can be found in the examples directory of this reposi
 | `cargo run --release --example the_works`| 
 |:--:|
 | This example utilizes most of the parameters available. The particles fade and shrink, have a mass affected by gravity, shoot outwards and have some amount of angular velocity, and dampening.  |
-|![Screencast from 2023-06-28 21-02-54](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/34e41811-261d-494d-92fd-2ef1002185fd)|
+|![works](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/4b16ddc7-d923-44d3-8142-b2588ad4b410)|
+
 
 ___
 
 | `cargo run --release --example fade` | 
 |:--:|
 | In this example the particles are stationary and just fade, giving the visual effect of the entire sprite just fading away |
-|![Screencast from 2023-06-28 21-06-27](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/4625ec7a-14b4-465b-8767-64ffa5de61c5)|
+|![fade](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/26156dd4-d1d6-4744-b331-d71582db659a)|
+
 ___
 
 | `cargo run --release --example shrink` |
 |:--:|
 | In this example the particles are stationary and just shrink in place |
-|![Screencast from 2023-06-28 21-08-21](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/28c916b6-7c28-49d8-98e1-28730ebd40d9)|
+|![shrink](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/bf08c9cf-283d-41d6-8997-993e77eccb04)|
+
 
 
 | `cargo run --release --example velocity` |
 |:--:|
 | In this example the particles shoot outwards from the sprite |
-|![Screencast from 2023-06-28 21-17-34](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/84279fc8-e823-474a-9549-e84dfad6cb9c)|
+|![velocity](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/064cb841-278d-4d07-ab68-c708922d332b)|
+
