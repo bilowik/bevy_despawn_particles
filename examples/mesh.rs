@@ -1,3 +1,5 @@
+/// Breaks apart meshes that do not have textures, also showcases that use of the
+/// DespawnMeshOverride to make Circle meshes break apart cleaner.
 use bevy::prelude::*;
 use bevy_despawn_particles::prelude::*;
 
@@ -97,6 +99,23 @@ fn spawn_meshes(
         .insert(Marker);
     commands
         .spawn(ColorMesh2dBundle {
+            transform: Transform {
+                translation: Vec3::new(0.0, -192.0, 0.0),
+                ..default()
+            },
+            material: color_materials.add(ColorMaterial::from(Color::BLUE)),
+            mesh: meshes
+                .add(Mesh::from(shape::Circle::new(128.0)))
+                .into(),
+            ..default()
+        })
+        .insert(Marker);
+    commands
+        .spawn(ColorMesh2dBundle {
+            transform: Transform {
+                translation: Vec3::new(0.0, 192.0, 0.0),
+                ..default()
+            },
             material: color_materials.add(ColorMaterial::from(Color::BLUE)),
             mesh: meshes
                 .add(Mesh::from(shape::Circle::new(128.0)))
