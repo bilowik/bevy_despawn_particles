@@ -17,6 +17,7 @@ impl DespawnParticlesPreset {
             ignore_parent_phys: self.ignore_parent_phys.clone(),
             shrink: self.shrink,
             fade: self.fade,
+            mesh_override: self.mesh_override.clone(),
         }
     }
 }
@@ -65,6 +66,9 @@ pub struct DespawnParticlesEvent {
 
     /// When true, generated particles will fade as it's lifetime approaches 0.
     pub fade: bool,
+
+    /// Use this mesh over the one used by the entity
+    pub mesh_override: Option<Handle<Mesh>>,
 }
 
 /// The builder struct for [DespawnParticlesEvent], typically this should be instantiated with
@@ -81,6 +85,7 @@ pub struct DespawnParticlesEventBuilder {
     pub ignore_parent_phys: bool,
     pub shrink: bool,
     pub fade: bool,
+    pub mesh_override: Option<Handle<Mesh>>,
 }
 
 impl DespawnParticlesEvent {
@@ -102,6 +107,7 @@ impl DespawnParticlesEventBuilder {
             ignore_parent_phys: false,
             shrink: false,
             fade: false,
+            mesh_override: None,
         }
     }
 
@@ -178,6 +184,7 @@ impl DespawnParticlesEventBuilder {
             ignore_parent_phys: self.ignore_parent_phys,
             shrink: self.shrink,
             fade: self.fade,
+            mesh_override: self.mesh_override,
         }
     }
 }

@@ -74,6 +74,7 @@ pub(crate) fn handle_despawn_particles_event(
         mass,
         shrink,
         fade,
+        mesh_override,
     } in despawn_particles_event_reader.iter()
     {
         // Use closures so we don't have to re-do the if statement for every single particle.
