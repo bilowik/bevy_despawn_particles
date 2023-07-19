@@ -1,5 +1,5 @@
-//! Primary purpose of this example is to show the simplest setup to demonstrate the crate. 
-//! For a better visual example see the example "the_works" 
+//! Primary purpose of this example is to show the simplest setup to demonstrate the crate.
+//! For a better visual example see the example "the_works"
 use bevy::prelude::*;
 use bevy_despawn_particles::prelude::*;
 

@@ -13,7 +13,7 @@ pub const DESPAWN_MATERIAL_SHADER_HANDLE: HandleUntyped =
 pub struct DespawnMaterial {
     #[texture(0)]
     #[sampler(1)]
-    pub source_image: Handle<Image>,
+    pub source_image: Option<Handle<Image>>,
 
     /// Percentage, as a value between 0.0 and 1.0
     #[uniform(2)]
