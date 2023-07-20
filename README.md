@@ -80,3 +80,8 @@ ___
 | In this example the particles shoot outwards from the sprite |
 |![velocity](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/064cb841-278d-4d07-ab68-c708922d332b)|
 
+| `cargo run --release --example mesh` |
+|:--:|
+| Can be utilized on a Mesh. Also includes usage of the faux circle mesh to replace the arguably unappealing triangles that typically make up a Cirlcle mesh |
+|![Screencast from 2023-07-19 20-55-22](https://github.com/bilowik/bevy_despawn_particles/assets/43679332/3e973f76-6d71-4fd0-ae67-b5cdeab8cef3)|
+
