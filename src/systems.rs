@@ -44,8 +44,6 @@ struct ImageParams {
     pub custom_size: Option<Vec2>,
 }
 
-const NUM_PARTICLES: usize = 64;
-
 /// Spawns death particles by creating a particles with a shader that pulls a small portion of the original texture
 pub(crate) fn handle_despawn_particles_event(
     mut commands: Commands,
@@ -76,8 +74,11 @@ pub(crate) fn handle_despawn_particles_event(
         shrink,
         fade,
         mesh_override: event_mesh_override,
+        target_num_particles,
     } in despawn_particles_event_reader.iter()
     {
+        let target_num_particles = target_num_particles.get_value();
+
         // Use closures so we don't have to re-do the if statement for every single particle.
         // This assumes the no-op actually gets optimized out, which is may not..
         let shrink_spawn_func = if *shrink {
@@ -249,7 +250,7 @@ pub(crate) fn handle_despawn_particles_event(
                     };
 
                     // Break down the triangles into individual meshes
-                    let meshes = match split_mesh(mesh, NUM_PARTICLES) {
+                    let meshes = match split_mesh(mesh, target_num_particles) {
                         Ok(meshes) => meshes,
                         Err(e) => {
                             warn!(
@@ -557,7 +558,7 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Spli
         // split_mesh_inner, but we save a lot of extra processing if we just do this one if
         // statement, so I think this will be much more efficient in cases where we already have enough
         // triangles and only very slightly less efficient in cases where we do have to call it.
-        if num_triangles < NUM_PARTICLES {
+        if num_triangles < target_count {
             // We need to break the triangles down further.
             let depth = f32::log2(target_count as f32 / num_triangles as f32).ceil() as usize;
             let mut final_meshes = Vec::with_capacity(num_triangles * 2usize.pow(depth as u32));
