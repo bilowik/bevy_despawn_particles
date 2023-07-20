@@ -501,6 +501,12 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Spli
             return Err(SplitMeshError::MissingVertices);
         };
 
+        let normals = mesh.attribute(Mesh::ATTRIBUTE_NORMAL)
+            .and_then(|normals| normals.as_float3())
+            .map(|normals| normals.to_vec())
+            .unwrap_or((0..vertices.len()).map(|_| [0.0, 0.0, 1.0]).collect());
+             
+
         let indices = if let Some(indices) = mesh
             .indices()
             .and_then(|indices| Some(indices.iter().collect::<Vec<_>>()))
@@ -545,7 +551,7 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Spli
                 );
                 mesh.insert_attribute(
                     Mesh::ATTRIBUTE_NORMAL,
-                    vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]],
+                    indices.iter().map(|idx| normals[*idx]).collect::<Vec<_>>(),
                 );
 
                 mesh.set_indices(Some(Indices::U32(vec![0, 1, 2])));
