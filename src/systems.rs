@@ -173,14 +173,18 @@ pub(crate) fn handle_despawn_particles_event(
                     .and_then(|handle| color_materials.get(handle))
                     .and_then(|material| Some(material.color))
                     .unwrap_or(Color::GRAY);
-                let mixed_shade =
-                    base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
-                let mixed_color =
-                    Color::rgba(mixed_shade, mixed_shade, mixed_shade, base_color.a());
+                let final_color = if gray == 1 {
+                    let mixed_shade =
+                        base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
+                        Color::rgba(mixed_shade, mixed_shade, mixed_shade, base_color.a())
+                }
+                else {
+                    base_color
+                };
                 (
                     mesh_handle.clone(),
                     None,
-                    Some(color_materials.add(ColorMaterial::from(mixed_color))),
+                    Some(color_materials.add(ColorMaterial::from(final_color))),
                 )
             } else {
                 warn!(
