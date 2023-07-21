@@ -75,9 +75,12 @@ pub(crate) fn handle_despawn_particles_event(
         fade,
         mesh_override: event_mesh_override,
         target_num_particles,
+        gray
     } in despawn_particles_event_reader.iter()
     {
         let target_num_particles = target_num_particles.get_value();
+
+        let gray: u32 = gray.then(|| 1).unwrap_or(0); // Need to convert for shader
 
         // Use closures so we don't have to re-do the if statement for every single particle.
         // This assumes the no-op actually gets optimized out, which is may not..
@@ -384,6 +387,7 @@ pub(crate) fn handle_despawn_particles_event(
                             source_image: Some(image_params.image_handle.clone()),
                             offset: (image_params.offset / image_params.texture_size),
                             size: (image_params.input_size / image_params.texture_size),
+                            gray,
                         });
                         entity_cmds.insert(material);
                     } else if let Some(color_material_handle) = maybe_color_material.clone() {

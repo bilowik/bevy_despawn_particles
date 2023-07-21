@@ -26,6 +26,10 @@ pub struct DespawnMaterial {
     /// Percentage, as a value between 0.0 and 1.0
     #[uniform(2)]
     pub alpha: f32,
+    
+    /// When true, grayscale the underlying texture
+    #[uniform(2)]
+    pub gray: u32,
 }
 
 impl Material2d for DespawnMaterial {
