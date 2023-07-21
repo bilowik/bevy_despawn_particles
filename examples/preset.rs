@@ -16,6 +16,7 @@ impl Default for MyPreset {
                 .with_linvel(100.0..180.0)
                 .with_angvel(-5.0..5.0)
                 .with_fade(true)
+                .with_gray(true)
                 .with_shrink(true),
         )
     }
