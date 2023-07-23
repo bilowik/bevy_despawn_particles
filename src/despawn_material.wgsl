@@ -5,7 +5,8 @@
 struct DespawnMaterial {
     offset: vec2<f32>,
     size: vec2<f32>,
-    alpha: f32
+    alpha: f32,
+    gray: u32
 };
 
 struct FragmentInput {
@@ -28,10 +29,16 @@ fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
     let uv = ((in.uv * new_range) + despawn_material.offset);
     let color = textureSample(texture, our_sampler, uv);
     let value = (color.r * 0.299 + color.g * 0.587 + color.b * 0.114);
-    return vec4<f32>(
-	value,
-	value,
-	value,
-	despawn_material.alpha * color.a
-    );
+    var new_color: vec4<f32>;
+
+    if(despawn_material.gray == 1u) {
+    	new_color = vec4<f32>(value, value, value, 0.0);
+    }
+    else {
+	new_color = color;
+    }
+
+    new_color[3] = despawn_material.alpha * color.a;
+    return new_color;
+
 }

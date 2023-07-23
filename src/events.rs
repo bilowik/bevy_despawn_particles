@@ -2,6 +2,7 @@
 use bevy::prelude::*;
 use bevy_variable_property::Property;
 
+
 impl DespawnParticlesPreset {
     /// Creates an event from the given preset.
     pub fn create_event(&self, entity: Entity) -> DespawnParticlesEvent {
@@ -19,6 +20,7 @@ impl DespawnParticlesPreset {
             fade: self.fade,
             mesh_override: self.mesh_override.clone(),
             target_num_particles: self.target_num_particles.clone(),
+            gray: false,
         }
     }
 }
@@ -70,8 +72,12 @@ pub struct DespawnParticlesEvent {
 
     /// Use this mesh over the one used by the entity
     pub mesh_override: Option<Handle<Mesh>>,
-
+    
+    /// The number of particles to try to match. The actual number may be more than this.
     pub target_num_particles: Property<usize>,
+
+    /// When true, will grayscale the particles
+    pub gray: bool,
 }
 
 /// The builder struct for [DespawnParticlesEvent], typically this should be instantiated with
@@ -90,6 +96,7 @@ pub struct DespawnParticlesEventBuilder {
     pub fade: bool,
     pub mesh_override: Option<Handle<Mesh>>,
     pub target_num_particles: Property<usize>,
+    pub gray: bool,
 }
 
 impl DespawnParticlesEvent {
@@ -113,6 +120,7 @@ impl DespawnParticlesEventBuilder {
             fade: false,
             mesh_override: None,
             target_num_particles: 64.into(),
+            gray: false,
         }
     }
 
@@ -186,6 +194,13 @@ impl DespawnParticlesEventBuilder {
         self
     }
 
+    /// See [DespawnParticlesEvent::gray]
+    pub fn with_gray(mut self, gray: bool) -> Self {
+        self.gray = gray;
+        self
+    }
+
+
     pub fn build(self, entity: Entity) -> DespawnParticlesEvent {
         DespawnParticlesEvent {
             entity,
@@ -201,6 +216,7 @@ impl DespawnParticlesEventBuilder {
             fade: self.fade,
             mesh_override: self.mesh_override,
             target_num_particles: self.target_num_particles,
+            gray: self.gray,
         }
     }
 }

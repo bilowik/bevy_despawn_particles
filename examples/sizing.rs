@@ -69,6 +69,7 @@ fn tick(
                     .with_lifetime(1.0)
                     .with_angular_damping(5.0)
                     .with_linear_damping(0.5)
+                    .with_gray(true)
                     .build(entity),
             );
             timer.0 = Timer::from_seconds(1.2, TimerMode::Once);
