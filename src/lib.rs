@@ -22,7 +22,7 @@ mod utils;
 
 use despawn::{DespawnMaterial, DESPAWN_MATERIAL_SHADER_HANDLE};
 use events::DespawnParticlesEvent;
-use systems::{handle_despawn_particle, handle_despawn_particles_event};
+use systems::{handle_despawn_particle, handle_despawn_particles_events};
 
 /// The despawn particle plugin. Required to utilize this crate.
 #[derive(Default)]
@@ -51,7 +51,7 @@ impl Plugin for DespawnParticlesPlugin {
         // Register systems and systemset
         // TODO: These might need to be ordered to prevent conflicts potentially?
         app.add_system(handle_despawn_particle.in_set(DespawnParticlesSet));
-        app.add_system(handle_despawn_particles_event.in_set(DespawnParticlesSet));
+        app.add_system(handle_despawn_particles_events.in_set(DespawnParticlesSet));
 
         #[cfg(not(feature = "rapier"))]
         {
