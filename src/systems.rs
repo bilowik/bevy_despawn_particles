@@ -44,23 +44,19 @@ struct ImageParams {
     pub custom_size: Option<Vec2>,
 }
 
-
 #[derive(Error, Debug)]
-pub enum DespawnParticlesError{
-    #[error("Could not fetch Image resource with the given handle")] 
+pub enum DespawnParticlesError {
+    #[error("Could not fetch Image resource with the given handle")]
     InvalidImageHandle,
 
     #[error("Could not fetch TextureAtlas resource with the given handle")]
     InvalidTextureAtlasHandle,
-    
+
     #[error("Could not fetch Mesh resource with the given handle")]
     InvalidMeshHandle,
 
     #[error("Invalid index set for the given TextureAtlas: index={index} max_index={max_index}")]
-    InvalidTextureAtlasIndex {
-        index: usize,
-        max_index: usize,
-    },
+    InvalidTextureAtlasIndex { index: usize, max_index: usize },
 
     #[error("The given Entity does not have a mesh or sprite to build particles from")]
     EntityMissingComponents,
@@ -76,16 +72,13 @@ pub enum DespawnParticlesError{
 
     #[error("Unexpected Mesh UV attribute format, expected Float32x2")]
     UnexpectedMeshUvAttributeFormat,
-    
+
     #[error("Mesh is missing the UV attribute")]
     MeshMissingUvAttribute,
 
     #[error("Mesh is missing the Position attribute")]
     MeshMissingPositionAttribute,
-
 }
-
-
 
 fn handle_despawn_particles_event(
     event: &DespawnParticlesEvent,
@@ -117,7 +110,7 @@ fn handle_despawn_particles_event(
         fade,
         mesh_override: event_mesh_override,
         target_num_particles,
-        gray
+        gray,
     } = event;
     let target_num_particles = target_num_particles.get_value();
 
@@ -149,74 +142,73 @@ fn handle_despawn_particles_event(
             return Ok(());
         }
 
-        let (mesh_handle, maybe_image_params, maybe_color_material) = if let Ok((
-            sprite,
-            image_handle,
-        )) =
-            sprites.get(*entity)
-        {
-            let image_size = images.get(&image_handle)
-                .and_then(|image| Some(image.size()))
-                .ok_or(DespawnParticlesError::InvalidImageHandle)?;
+        let (mesh_handle, maybe_image_params, maybe_color_material) =
+            if let Ok((sprite, image_handle)) = sprites.get(*entity) {
+                let image_size = images
+                    .get(&image_handle)
+                    .and_then(|image| Some(image.size()))
+                    .ok_or(DespawnParticlesError::InvalidImageHandle)?;
 
-            let mesh = shape::Quad::new(image_size);
+                let mesh = shape::Quad::new(image_size);
 
-            (
-                meshes.add(mesh.into()).into(),
-                Some(ImageParams {
-                    offset: Vec2::ZERO,
-                    image_handle: image_handle.clone(),
-                    input_size: image_size,
-                    texture_size: image_size,
-                    custom_size: sprite.custom_size,
-                }),
-                None,
-            )
-        } else if let Ok((tas, ta_handle)) = tass.get(*entity) {
-            let atlas = atlases.get(ta_handle)
-                .ok_or(DespawnParticlesError::InvalidTextureAtlasHandle)?;
+                (
+                    meshes.add(mesh.into()).into(),
+                    Some(ImageParams {
+                        offset: Vec2::ZERO,
+                        image_handle: image_handle.clone(),
+                        input_size: image_size,
+                        texture_size: image_size,
+                        custom_size: sprite.custom_size,
+                    }),
+                    None,
+                )
+            } else if let Ok((tas, ta_handle)) = tass.get(*entity) {
+                let atlas = atlases
+                    .get(ta_handle)
+                    .ok_or(DespawnParticlesError::InvalidTextureAtlasHandle)?;
 
-            let rect = atlas.textures.get(tas.index)
-                .ok_or(DespawnParticlesError::InvalidTextureAtlasIndex {
-                    index: tas.index,
-                    max_index: atlas.textures.len(),
-                })?;
-            let image = images.get(&atlas.texture)
-                .ok_or(DespawnParticlesError::InvalidImageHandle)?;
-            let input_size = Vec2::new(rect.width(), rect.height());
-            let mesh = shape::Quad::new(input_size);
-            (
-                meshes.add(mesh.into()).into(),
-                Some(ImageParams {
-                    offset: rect.min,
-                    image_handle: atlas.texture.clone(),
-                    input_size,
-                    texture_size: image.size(),
-                    custom_size: tas.custom_size,
-                }),
-                None,
-            )
-        } else if let Ok((mesh_handle, maybe_color_material)) = mesh_components.get(*entity) {
-            let base_color = maybe_color_material
-                .and_then(|handle| color_materials.get(handle))
-                .and_then(|material| Some(material.color))
-                .unwrap_or(Color::GRAY);
-            let final_color = if gray == 1 {
-                let mixed_shade =
-                    base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
+                let rect = atlas.textures.get(tas.index).ok_or(
+                    DespawnParticlesError::InvalidTextureAtlasIndex {
+                        index: tas.index,
+                        max_index: atlas.textures.len(),
+                    },
+                )?;
+                let image = images
+                    .get(&atlas.texture)
+                    .ok_or(DespawnParticlesError::InvalidImageHandle)?;
+                let input_size = Vec2::new(rect.width(), rect.height());
+                let mesh = shape::Quad::new(input_size);
+                (
+                    meshes.add(mesh.into()).into(),
+                    Some(ImageParams {
+                        offset: rect.min,
+                        image_handle: atlas.texture.clone(),
+                        input_size,
+                        texture_size: image.size(),
+                        custom_size: tas.custom_size,
+                    }),
+                    None,
+                )
+            } else if let Ok((mesh_handle, maybe_color_material)) = mesh_components.get(*entity) {
+                let base_color = maybe_color_material
+                    .and_then(|handle| color_materials.get(handle))
+                    .and_then(|material| Some(material.color))
+                    .unwrap_or(Color::GRAY);
+                let final_color = if gray == 1 {
+                    let mixed_shade =
+                        base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
                     Color::rgba(mixed_shade, mixed_shade, mixed_shade, base_color.a())
-            }
-            else {
-                base_color
+                } else {
+                    base_color
+                };
+                (
+                    mesh_handle.clone(),
+                    None,
+                    Some(color_materials.add(ColorMaterial::from(final_color))),
+                )
+            } else {
+                return Err(DespawnParticlesError::EntityMissingComponents);
             };
-            (
-                mesh_handle.clone(),
-                None,
-                Some(color_materials.add(ColorMaterial::from(final_color))),
-            )
-        } else {
-            return Err(DespawnParticlesError::EntityMissingComponents);
-        };
 
         // Find which mesh to use.
         let mesh_handle = event_mesh_override
@@ -230,20 +222,30 @@ fn handle_despawn_particles_event(
             .unwrap_or(mesh_handle.0);
 
         // Break the mesh into smaller triangles
-        let mut mesh = meshes.get(&mesh_handle).cloned().ok_or(DespawnParticlesError::InvalidMeshHandle)?;
+        let mut mesh = meshes
+            .get(&mesh_handle)
+            .cloned()
+            .ok_or(DespawnParticlesError::InvalidMeshHandle)?;
         let triangle_meshes = if let PrimitiveTopology::TriangleList = mesh.primitive_topology() {
-            let vertices = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+            let vertices = mesh
+                .attribute(Mesh::ATTRIBUTE_POSITION)
                 .ok_or(DespawnParticlesError::MeshMissingPositionAttribute)
-                .and_then(|vertices| vertices.as_float3().ok_or(DespawnParticlesError::UnexpectedMeshPositionAttributeFormat))
-                .and_then(|vertices| Ok(vertices.iter().map(|vertex| Vec3::from(*vertex)).collect::<Vec<_>>()))?;
-
+                .and_then(|vertices| {
+                    vertices
+                        .as_float3()
+                        .ok_or(DespawnParticlesError::UnexpectedMeshPositionAttributeFormat)
+                })
+                .and_then(|vertices| {
+                    Ok(vertices
+                        .iter()
+                        .map(|vertex| Vec3::from(*vertex))
+                        .collect::<Vec<_>>())
+                })?;
 
             if mesh.indices().is_none() {
                 // We have no indices, so add them by hand and return the number of
                 // triangles after
-                mesh.set_indices(Some(Indices::U32(
-                    (0..(vertices.len() as u32)).collect(),
-                )));
+                mesh.set_indices(Some(Indices::U32((0..(vertices.len() as u32)).collect())));
             }
 
             // Break down the triangles into individual meshes
@@ -282,8 +284,7 @@ fn handle_despawn_particles_event(
                     (mesh, Vec3::from(centroid))
                 })
                 .collect::<Vec<_>>()
-        }
-        else {
+        } else {
             // We do not have a TriangleList mesh format, so we cannot continue.
             return Err(DespawnParticlesError::UnexpectedMeshTopology);
         };
@@ -392,7 +393,6 @@ fn handle_despawn_particles_event(
     Ok(())
 }
 
-
 /// Spawns death particles by creating a particles with a shader that pulls a small portion of the original texture
 pub(crate) fn handle_despawn_particles_events(
     mut commands: Commands,
@@ -411,8 +411,26 @@ pub(crate) fn handle_despawn_particles_events(
     despawn_mesh_overrides: Query<&DespawnMeshOverride>,
 ) {
     for event in despawn_particles_event_reader.iter() {
-        if let Err(e) = handle_despawn_particles_event(event, &mut commands, &images, &mut meshes, &atlases, &global_transforms, &mut despawn_materials, &sprites, &tass, &mesh_components, &mut color_materials, &no_death_animations, &velocities, &despawn_mesh_overrides) {
-            error!("Could not create despawn particles for entity {:?}: {}", event.entity, e);
+        if let Err(e) = handle_despawn_particles_event(
+            event,
+            &mut commands,
+            &images,
+            &mut meshes,
+            &atlases,
+            &global_transforms,
+            &mut despawn_materials,
+            &sprites,
+            &tass,
+            &mesh_components,
+            &mut color_materials,
+            &no_death_animations,
+            &velocities,
+            &despawn_mesh_overrides,
+        ) {
+            error!(
+                "Could not create despawn particles for entity {:?}: {}",
+                event.entity, e
+            );
         }
     }
 }
@@ -465,20 +483,26 @@ pub(crate) fn handle_despawn_particle(
     }
 }
 
-
-
 pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, DespawnParticlesError> {
     if let PrimitiveTopology::TriangleList = mesh.primitive_topology() {
-        let vertices = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+        let vertices = mesh
+            .attribute(Mesh::ATTRIBUTE_POSITION)
             .and_then(|vertices| vertices.as_float3())
-            .and_then(|vertices| Some(vertices.iter().map(|vertex| Vec3::from(*vertex)).collect::<Vec<_>>()))
+            .and_then(|vertices| {
+                Some(
+                    vertices
+                        .iter()
+                        .map(|vertex| Vec3::from(*vertex))
+                        .collect::<Vec<_>>(),
+                )
+            })
             .ok_or(DespawnParticlesError::UnexpectedMeshUvAttributeFormat)?;
 
-        let normals = mesh.attribute(Mesh::ATTRIBUTE_NORMAL)
+        let normals = mesh
+            .attribute(Mesh::ATTRIBUTE_NORMAL)
             .and_then(|normals| normals.as_float3())
             .map(|normals| normals.to_vec())
             .unwrap_or((0..vertices.len()).map(|_| [0.0, 0.0, 1.0]).collect());
-             
 
         let indices = if let Some(indices) = mesh
             .indices()
@@ -498,7 +522,10 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Desp
         };
 
         // Get the UVs
-        let uvs = match mesh.attribute(Mesh::ATTRIBUTE_UV_0).ok_or(DespawnParticlesError::MeshMissingUvAttribute)? {
+        let uvs = match mesh
+            .attribute(Mesh::ATTRIBUTE_UV_0)
+            .ok_or(DespawnParticlesError::MeshMissingUvAttribute)?
+        {
             VertexAttributeValues::Float32x2(uvs) => uvs,
             _ => {
                 return Err(DespawnParticlesError::UnexpectedMeshUvAttributeFormat);
