@@ -2,7 +2,6 @@
 use bevy::prelude::*;
 use bevy_variable_property::Property;
 
-
 impl DespawnParticlesPreset {
     /// Creates an event from the given preset.
     pub fn create_event(&self, entity: Entity) -> DespawnParticlesEvent {
@@ -72,7 +71,7 @@ pub struct DespawnParticlesEvent {
 
     /// Use this mesh over the one used by the entity
     pub mesh_override: Option<Handle<Mesh>>,
-    
+
     /// The number of particles to try to match. The actual number may be more than this.
     pub target_num_particles: Property<usize>,
 
@@ -199,7 +198,6 @@ impl DespawnParticlesEventBuilder {
         self.gray = gray;
         self
     }
-
 
     pub fn build(self, entity: Entity) -> DespawnParticlesEvent {
         DespawnParticlesEvent {
