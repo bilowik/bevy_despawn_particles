@@ -80,6 +80,20 @@ pub enum DespawnParticlesError {
     MeshMissingPositionAttribute,
 }
 
+// Will panic if shrink is None
+fn add_shrink(entity_cmds: &mut EntityCommands, shrink: Option<Curve>) {
+    entity_cmds.insert(ShrinkingDespawnParticle(shrink.unwrap()));
+}
+
+// Will panic if fade is None
+fn add_fade(entity_cmds: &mut EntityCommands, fade: Option<Curve>) {
+    entity_cmds.insert(FadingDespawnParticle(fade.unwrap()));
+}
+
+fn add_shrink_fade_noop(_: &mut EntityCommands, _: Option<Curve>) {
+
+}
+
 fn handle_despawn_particles_event(
     event: &DespawnParticlesEvent,
     commands: &mut Commands,
@@ -116,22 +130,18 @@ fn handle_despawn_particles_event(
 
     let gray: u32 = gray.then(|| 1).unwrap_or(0); // Need to convert for shader
 
-    // Use closures so we don't have to re-do the if statement for every single particle.
-    // This assumes the no-op actually gets optimized out, which is may not..
-    let shrink_spawn_func = if *shrink {
-        |entity_cmds: &mut EntityCommands| {
-            entity_cmds.insert(ShrinkingDespawnParticle);
-        }
+    // Use predetermined funcs so we don't have to re-do the if statement for every single particle.
+    // This assumes the no-op actually gets optimized out, which it may not..
+    let maybe_shrink_add_func = if shrink.is_some() {
+        add_shrink
     } else {
-        |_entity_cmds: &mut EntityCommands| {}
+        add_shrink_fade_noop
     };
 
-    let fade_spawn_func = if *fade {
-        |entity_cmds: &mut EntityCommands| {
-            entity_cmds.insert(FadingDespawnParticle);
-        }
+    let maybe_fade_add_func = if fade.is_some() {
+       add_fade 
     } else {
-        |_entity_cmds: &mut EntityCommands| {}
+        add_shrink_fade_noop
     };
 
     if let Some(mut entity_commands) = commands.get_entity(*entity) {
@@ -385,8 +395,8 @@ fn handle_despawn_particles_event(
                     ));
                 }
 
-                shrink_spawn_func(&mut entity_cmds);
-                fade_spawn_func(&mut entity_cmds);
+                maybe_shrink_add_func(&mut entity_cmds, *shrink);
+                maybe_fade_add_func(&mut entity_cmds, *fade);
             }
         }
     }
@@ -466,19 +476,18 @@ pub(crate) fn handle_despawn_particle(
                 entity_commands.despawn();
             }
         }
-        let percent = despawn_particle.lifetime.percent_left();
-        if let Some(mut despawn_material) = maybe_fade
-            .and_then(|_| maybe_despawn_material_handle)
-            .and_then(|handle| despawn_materials.get_mut(handle))
+        let percent = despawn_particle.lifetime.percent();
+        if let (Some(fade), Some(despawn_material)) = (maybe_fade, maybe_despawn_material_handle
+            .and_then(|handle| despawn_materials.get_mut(handle)))
         {
-            despawn_material.alpha = percent;
-        } else if let Some((color_material, original_alpha)) = maybe_color_material_handle_and_alpha
-            .and_then(|(handle, a)| color_materials.get_mut(handle).zip(Some(a)))
+            despawn_material.alpha = fade.0.calc(percent);
+        } else if let (Some((color_material, original_alpha)), Some(fade)) = (maybe_color_material_handle_and_alpha
+            .and_then(|(handle, a)| color_materials.get_mut(handle).zip(Some(a))), maybe_fade)
         {
-            color_material.color.set_a(original_alpha.0 * percent);
+            color_material.color.set_a(original_alpha.0 * fade.0.calc(percent));
         }
-        if maybe_shrink.is_some() {
-            transform.scale = Vec3::splat(percent);
+        if let Some(curve) = maybe_shrink {
+            transform.scale = Vec3::splat(curve.0.calc(percent));
         }
     }
 }

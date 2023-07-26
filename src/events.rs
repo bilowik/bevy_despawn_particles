@@ -2,6 +2,8 @@
 use bevy::prelude::*;
 use bevy_variable_property::Property;
 
+use crate::components::Curve;
+
 impl DespawnParticlesPreset {
     /// Creates an event from the given preset.
     pub fn create_event(&self, entity: Entity) -> DespawnParticlesEvent {
@@ -15,8 +17,8 @@ impl DespawnParticlesPreset {
             mass: self.mass.clone(),
             lifetime: self.lifetime.clone(),
             ignore_parent_phys: self.ignore_parent_phys.clone(),
-            shrink: self.shrink,
-            fade: self.fade,
+            shrink: self.shrink.clone(),
+            fade: self.fade.clone(),
             mesh_override: self.mesh_override.clone(),
             target_num_particles: self.target_num_particles.clone(),
             gray: false,
@@ -64,10 +66,10 @@ pub struct DespawnParticlesEvent {
     pub ignore_parent_phys: bool,
 
     /// When true, generated particles will shrink as it's lifetime approaches 0.
-    pub shrink: bool,
+    pub shrink: Option<Curve>,
 
     /// When true, generated particles will fade as it's lifetime approaches 0.
-    pub fade: bool,
+    pub fade: Option<Curve>,
 
     /// Use this mesh over the one used by the entity
     pub mesh_override: Option<Handle<Mesh>>,
@@ -91,8 +93,8 @@ pub struct DespawnParticlesEventBuilder {
     pub lifetime: Property<f32>,
     pub mass: Property<f32>,
     pub ignore_parent_phys: bool,
-    pub shrink: bool,
-    pub fade: bool,
+    pub shrink: Option<Curve>,
+    pub fade: Option<Curve>,
     pub mesh_override: Option<Handle<Mesh>>,
     pub target_num_particles: Property<usize>,
     pub gray: bool,
@@ -115,8 +117,8 @@ impl DespawnParticlesEventBuilder {
             angular_damping: Default::default(),
             mass: Default::default(),
             ignore_parent_phys: false,
-            shrink: false,
-            fade: false,
+            shrink: None,
+            fade: None,
             mesh_override: None,
             target_num_particles: 64.into(),
             gray: false,
@@ -172,13 +174,13 @@ impl DespawnParticlesEventBuilder {
     }
 
     /// See [DespawnParticlesEvent::shrink]
-    pub fn with_shrink(mut self, shrink: bool) -> Self {
+    pub fn with_shrink(mut self, shrink: Option<Curve>) -> Self {
         self.shrink = shrink;
         self
     }
 
     /// See [DespawnParticlesEvent::fade]
-    pub fn with_fade(mut self, fade: bool) -> Self {
+    pub fn with_fade(mut self, fade: Option<Curve>) -> Self {
         self.fade = fade;
         self
     }

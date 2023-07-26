@@ -31,13 +31,39 @@ impl Default for DespawnParticle {
     }
 }
 
+/// Determines the curve for the fading and shrinking particle functionalities
+#[derive(Default, Clone, Copy)]
+pub enum Curve {
+    #[default]
+    Linear,
+    Log,
+    Exp,
+}
+
+impl Curve {
+    pub(crate) fn calc(&self, value: f32) -> f32 {
+        match self {
+            Curve::Linear => 1.0 - value,
+            Curve::Log => {
+                // Use log2(x), but using the max of that and 0 as the min, create the
+                // percentage using that. So if the max of log2(1) = MAX, then 
+                // calcaulate the percent between 0 and MAX some y value is in there.
+                ((1.1f32.log10() + 1.0) - ((value + 0.1).log10() + 1.0)) / (1.1f32.log10() + 1.0)
+            }
+            Curve::Exp => {
+                1.0 - (value * (2.0 - value))
+            }
+        }
+    }
+}
+
 /// A despawn particle that will fade as it approaches its expiration
 #[derive(Component, Default)]
-pub(crate) struct FadingDespawnParticle;
+pub(crate) struct FadingDespawnParticle(pub Curve);
 
 /// A despawn particle that will shrink as it approaches its expiration
 #[derive(Component, Default)]
-pub(crate) struct ShrinkingDespawnParticle;
+pub(crate) struct ShrinkingDespawnParticle(pub Curve);
 
 #[derive(Bundle)]
 pub(crate) struct DespawnParticleBundle {
