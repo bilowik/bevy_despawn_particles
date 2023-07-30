@@ -20,6 +20,7 @@ use thiserror::Error;
 use crate::phys::{Damping, Velocity};
 
 use crate::{
+    resources::{DespawnParticlesConfig, DespawnParticleQueue},
     components::*,
     despawn::{DespawnMaterial, NoDespawnAnimation},
     events::DespawnParticlesEvent,
@@ -80,6 +81,15 @@ pub enum DespawnParticlesError {
     MeshMissingPositionAttribute,
 }
 
+pub fn setup(
+    mut despawn_particles_queue: ResMut<DespawnParticleQueue>,
+    config: Res<DespawnParticlesConfig>,
+) {
+    // Start with the correct capacity to avoid unnecessary allocations. Additional allocation will
+    // likely occur after this though 
+    despawn_particles_queue.0 = std::collections::VecDeque::with_capacity(config.max_particles);
+}
+
 fn handle_despawn_particles_event(
     event: &DespawnParticlesEvent,
     commands: &mut Commands,
@@ -95,6 +105,7 @@ fn handle_despawn_particles_event(
     no_death_animations: &Query<&NoDespawnAnimation>,
     velocities: &Query<&Velocity>,
     despawn_mesh_overrides: &Query<&DespawnMeshOverride>,
+    despawn_particle_queue: &mut DespawnParticleQueue,
 ) -> Result<(), DespawnParticlesError> {
     let DespawnParticlesEvent {
         entity,
@@ -387,6 +398,8 @@ fn handle_despawn_particles_event(
 
                 shrink_spawn_func(&mut entity_cmds);
                 fade_spawn_func(&mut entity_cmds);
+
+                despawn_particle_queue.0.push_back(entity_cmds.id());
             }
         }
     }
@@ -409,6 +422,7 @@ pub(crate) fn handle_despawn_particles_events(
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
     despawn_mesh_overrides: Query<&DespawnMeshOverride>,
+    mut despawn_particle_queue: ResMut<DespawnParticleQueue>,
 ) {
     for event in despawn_particles_event_reader.iter() {
         if let Err(e) = handle_despawn_particles_event(
@@ -426,6 +440,7 @@ pub(crate) fn handle_despawn_particles_events(
             &no_death_animations,
             &velocities,
             &despawn_mesh_overrides,
+            &mut despawn_particle_queue
         ) {
             error!(
                 "Could not create despawn particles for entity {:?}: {}",
@@ -467,7 +482,7 @@ pub(crate) fn handle_despawn_particle(
             }
         }
         let percent = despawn_particle.lifetime.percent_left();
-        if let Some(mut despawn_material) = maybe_fade
+        if let Some(despawn_material) = maybe_fade
             .and_then(|_| maybe_despawn_material_handle)
             .and_then(|handle| despawn_materials.get_mut(handle))
         {
@@ -480,6 +495,33 @@ pub(crate) fn handle_despawn_particle(
         if maybe_shrink.is_some() {
             transform.scale = Vec3::splat(percent);
         }
+    }
+}
+
+
+pub fn max_particles_check(
+    config: Res<DespawnParticlesConfig>,
+    mut particle_queue: ResMut<DespawnParticleQueue>,
+    particles: Query<(Entity, &DespawnParticle)>,
+    mut commands: Commands,
+) {
+    for _ in 0..(particle_queue.0.len().saturating_sub(config.max_particles)) {
+        particle_queue.0
+            .pop_front()
+            .and_then(|curr_entity| {
+                if particles.contains(curr_entity) {
+                    // We've exceeded the max particles and this particle still exists, so despawn it.
+                    Some(curr_entity)
+                }
+                else {
+                    None
+                }
+            })
+            .and_then(|curr_entity| commands.get_entity(curr_entity)) 
+            .and_then(|mut entity_cmds| {
+                entity_cmds.despawn();
+                Some(())
+            });
     }
 }
 

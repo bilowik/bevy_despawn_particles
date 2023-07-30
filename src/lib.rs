@@ -23,8 +23,8 @@ mod utils;
 
 use despawn::{DespawnMaterial, DESPAWN_MATERIAL_SHADER_HANDLE};
 use events::DespawnParticlesEvent;
-use systems::{handle_despawn_particle, handle_despawn_particles_events};
-use resources::DespawnParticlesConfig;
+use systems::{handle_despawn_particle, handle_despawn_particles_events, setup, max_particles_check};
+use resources::{DespawnParticlesConfig, DespawnParticleQueue};
 
 
 /// The despawn particle plugin. Required to utilize this crate.
@@ -55,8 +55,11 @@ impl Plugin for DespawnParticlesPlugin {
         // TODO: These might need to be ordered to prevent conflicts potentially?
         app.add_system(handle_despawn_particle.in_set(DespawnParticlesSet));
         app.add_system(handle_despawn_particles_events.in_set(DespawnParticlesSet));
+        app.add_system(max_particles_check.in_set(DespawnParticlesSet));
+        app.add_startup_system(setup);
 
         app.init_resource::<DespawnParticlesConfig>();
+        app.init_resource::<DespawnParticleQueue>();
 
         #[cfg(not(feature = "rapier"))]
         {
@@ -75,4 +78,5 @@ pub mod prelude {
     pub use crate::components::{DespawnMeshOverride, DespawnParticle};
     pub use crate::events::{DespawnParticlesEvent, DespawnParticlesPreset};
     pub use crate::{DespawnParticlesPlugin, DespawnParticlesSet};
+    pub use crate::resources::DespawnParticlesConfig;
 }
