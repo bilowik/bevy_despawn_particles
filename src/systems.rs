@@ -20,10 +20,10 @@ use thiserror::Error;
 use crate::phys::{Damping, Velocity};
 
 use crate::{
-    resources::{DespawnParticlesConfig, DespawnParticleQueue},
     components::*,
     despawn::{DespawnMaterial, NoDespawnAnimation},
     events::DespawnParticlesEvent,
+    resources::{DespawnParticleQueue, DespawnParticlesConfig},
     utils::{angle_between3, float32x3_sub, float32x3_triangle_centroid},
 };
 
@@ -86,7 +86,7 @@ pub fn setup(
     config: Res<DespawnParticlesConfig>,
 ) {
     // Start with the correct capacity to avoid unnecessary allocations. Additional allocation will
-    // likely occur after this though 
+    // likely occur after this though
     despawn_particles_queue.0 = std::collections::VecDeque::with_capacity(config.max_particles);
 }
 
@@ -440,7 +440,7 @@ pub(crate) fn handle_despawn_particles_events(
             &no_death_animations,
             &velocities,
             &despawn_mesh_overrides,
-            &mut despawn_particle_queue
+            &mut despawn_particle_queue,
         ) {
             error!(
                 "Could not create despawn particles for entity {:?}: {}",
@@ -498,7 +498,6 @@ pub(crate) fn handle_despawn_particle(
     }
 }
 
-
 pub fn max_particles_check(
     config: Res<DespawnParticlesConfig>,
     mut particle_queue: ResMut<DespawnParticleQueue>,
@@ -506,18 +505,18 @@ pub fn max_particles_check(
     mut commands: Commands,
 ) {
     for _ in 0..(particle_queue.0.len().saturating_sub(config.max_particles)) {
-        particle_queue.0
+        particle_queue
+            .0
             .pop_front()
             .and_then(|curr_entity| {
                 if particles.contains(curr_entity) {
                     // We've exceeded the max particles and this particle still exists, so despawn it.
                     Some(curr_entity)
-                }
-                else {
+                } else {
                     None
                 }
             })
-            .and_then(|curr_entity| commands.get_entity(curr_entity)) 
+            .and_then(|curr_entity| commands.get_entity(curr_entity))
             .and_then(|mut entity_cmds| {
                 entity_cmds.despawn();
                 Some(())

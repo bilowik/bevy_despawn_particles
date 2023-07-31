@@ -20,9 +20,7 @@ fn main() {
         .add_plugins(DespawnParticlesPlugin)
         .add_systems(Startup, setup)
         .add_systems(Update, tick)
-        .insert_resource(DespawnParticlesConfig {
-            max_particles: 320,
-        })
+        .insert_resource(DespawnParticlesConfig { max_particles: 320 })
         .run();
 }
 

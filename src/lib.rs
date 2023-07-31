@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
-use bevy::app::{App, Plugin, Update, Startup};
+use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{load_internal_asset, AddAsset};
-use bevy::ecs::schedule::{SystemSet, IntoSystemConfigs};
+use bevy::ecs::schedule::{IntoSystemConfigs, SystemSet};
 use bevy::render::prelude::Shader;
 
 use bevy::sprite::Material2dPlugin;
@@ -12,8 +12,8 @@ use bevy_rapier2d::prelude::*;
 pub mod components;
 mod despawn;
 pub mod events;
-mod systems;
 pub mod resources;
+mod systems;
 
 #[cfg(not(feature = "rapier"))]
 mod phys;
@@ -22,9 +22,10 @@ mod utils;
 
 use despawn::{DespawnMaterial, DESPAWN_MATERIAL_SHADER_HANDLE};
 use events::DespawnParticlesEvent;
-use systems::{handle_despawn_particle, handle_despawn_particles_events, setup, max_particles_check};
-use resources::{DespawnParticlesConfig, DespawnParticleQueue};
-
+use resources::{DespawnParticleQueue, DespawnParticlesConfig};
+use systems::{
+    handle_despawn_particle, handle_despawn_particles_events, max_particles_check, setup,
+};
 
 /// The despawn particle plugin. Required to utilize this crate.
 #[derive(Default)]
@@ -53,7 +54,10 @@ impl Plugin for DespawnParticlesPlugin {
         // Register systems and systemset
         // TODO: These might need to be ordered to prevent conflicts potentially?
         app.add_systems(Update, handle_despawn_particle.in_set(DespawnParticlesSet));
-        app.add_systems(Update, handle_despawn_particles_events.in_set(DespawnParticlesSet));
+        app.add_systems(
+            Update,
+            handle_despawn_particles_events.in_set(DespawnParticlesSet),
+        );
         app.add_systems(Update, max_particles_check.in_set(DespawnParticlesSet));
         app.add_systems(Startup, setup);
 
@@ -76,6 +80,6 @@ impl Plugin for DespawnParticlesPlugin {
 pub mod prelude {
     pub use crate::components::{DespawnMeshOverride, DespawnParticle};
     pub use crate::events::{DespawnParticlesEvent, DespawnParticlesPreset};
-    pub use crate::{DespawnParticlesPlugin, DespawnParticlesSet};
     pub use crate::resources::DespawnParticlesConfig;
+    pub use crate::{DespawnParticlesPlugin, DespawnParticlesSet};
 }

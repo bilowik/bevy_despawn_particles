@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use bevy::ecs::prelude::{Resource, Entity};
+use bevy::ecs::prelude::{Entity, Resource};
 
 #[derive(Resource)]
 pub struct DespawnParticlesConfig {
@@ -14,7 +14,6 @@ impl Default for DespawnParticlesConfig {
         }
     }
 }
-
 
 #[derive(Resource, Default)]
 pub struct DespawnParticleQueue(pub VecDeque<Entity>);
