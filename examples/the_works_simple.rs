@@ -9,9 +9,9 @@ pub struct Marker;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(DespawnParticlesPlugin)
-        .add_system(setup.on_startup())
-        .add_system(despawn)
+        .add_plugins(DespawnParticlesPlugin)
+        .add_systems(Startup, setup)
+        .add_systems(Update, despawn)
         .run();
 }
 
