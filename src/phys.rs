@@ -1,20 +1,20 @@
 use bevy::prelude::*;
 
-#[derive(Component, Default, Reflect, FromReflect, Copy, Clone)]
+#[derive(Component, Default, Reflect, Copy, Clone)]
 #[reflect(Component)]
 pub struct Velocity {
     pub angvel: f32,
     pub linvel: Vec2,
 }
 
-#[derive(Component, Default, Reflect, FromReflect)]
+#[derive(Component, Default, Reflect)]
 #[reflect(Component)]
 pub struct Damping {
     pub linear_damping: f32,
     pub angular_damping: f32,
 }
 
-#[derive(Component, Default, Reflect, FromReflect)]
+#[derive(Component, Default, Reflect)]
 #[reflect(Component)]
 pub struct AdditionalMassProperties(f32);
 
