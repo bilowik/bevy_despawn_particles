@@ -1,8 +1,7 @@
 #![doc = include_str!("../README.md")]
-use bevy::app::{App, Plugin};
+use bevy::app::{App, Plugin, Update, Startup};
 use bevy::asset::{load_internal_asset, AddAsset};
-use bevy::ecs::prelude::IntoSystemConfig;
-use bevy::ecs::schedule::SystemSet;
+use bevy::ecs::schedule::{SystemSet, IntoSystemConfigs};
 use bevy::render::prelude::Shader;
 
 use bevy::sprite::Material2dPlugin;
@@ -45,7 +44,7 @@ impl Plugin for DespawnParticlesPlugin {
             Shader::from_wgsl
         );
 
-        app.add_plugin(Material2dPlugin::<DespawnMaterial>::default())
+        app.add_plugins(Material2dPlugin::<DespawnMaterial>::default())
             .register_asset_reflect::<DespawnMaterial>();
 
         // Register events
@@ -53,17 +52,17 @@ impl Plugin for DespawnParticlesPlugin {
 
         // Register systems and systemset
         // TODO: These might need to be ordered to prevent conflicts potentially?
-        app.add_system(handle_despawn_particle.in_set(DespawnParticlesSet));
-        app.add_system(handle_despawn_particles_events.in_set(DespawnParticlesSet));
-        app.add_system(max_particles_check.in_set(DespawnParticlesSet));
-        app.add_startup_system(setup);
+        app.add_systems(Update, handle_despawn_particle.in_set(DespawnParticlesSet));
+        app.add_systems(Update, handle_despawn_particles_events.in_set(DespawnParticlesSet));
+        app.add_systems(Update, max_particles_check.in_set(DespawnParticlesSet));
+        app.add_systems(Startup, setup);
 
         app.init_resource::<DespawnParticlesConfig>();
         app.init_resource::<DespawnParticleQueue>();
 
         #[cfg(not(feature = "rapier"))]
         {
-            app.add_system(phys::phys_tick.in_set(DespawnParticlesSet));
+            app.add_systems(Update, phys::phys_tick.in_set(DespawnParticlesSet));
             app.init_resource::<phys::Gravity>();
         }
 

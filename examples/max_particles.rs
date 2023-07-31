@@ -17,9 +17,9 @@ impl Default for MyTimer {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(DespawnParticlesPlugin)
-        .add_system(setup.on_startup())
-        .add_system(tick)
+        .add_plugins(DespawnParticlesPlugin)
+        .add_systems(Startup, setup)
+        .add_systems(Update, tick)
         .insert_resource(DespawnParticlesConfig {
             max_particles: 320,
         })

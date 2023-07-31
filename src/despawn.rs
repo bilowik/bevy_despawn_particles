@@ -8,7 +8,7 @@ use bevy::{
 pub const DESPAWN_MATERIAL_SHADER_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 13255228607086843049);
 
-#[derive(AsBindGroup, TypeUuid, Clone, Reflect, FromReflect)]
+#[derive(AsBindGroup, TypeUuid, Clone, Reflect)]
 #[uuid = "f3bd99b1-6bd7-4749-97ae-0b526d1b6aed"]
 pub struct DespawnMaterial {
     #[texture(0)]
@@ -38,6 +38,6 @@ impl Material2d for DespawnMaterial {
     }
 }
 
-#[derive(Component, Default, Reflect, FromReflect)]
+#[derive(Component, Default, Reflect)]
 #[reflect(Component)]
 pub struct NoDespawnAnimation;

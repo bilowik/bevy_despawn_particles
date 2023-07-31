@@ -67,7 +67,8 @@ impl Default for DespawnParticleBundle {
 
 /// Used for ColorMaterial meshes to track what the original alpha value
 /// was so it can be properly mixed during fading.
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
 pub(crate) struct OriginalAlpha(pub f32);
 
 impl Default for OriginalAlpha {
@@ -79,7 +80,7 @@ impl Default for OriginalAlpha {
 /// When present on an Entity, will override the underlying Mesh when creating the
 /// despawn particles. Targetted mostly towards circles since the way they are built do
 /// not break down in a way similar to other shapes.
-#[derive(Component, Reflect, FromReflect, Default)]
+#[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct DespawnMeshOverride(pub Handle<Mesh>);
 

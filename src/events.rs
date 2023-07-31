@@ -29,7 +29,7 @@ impl DespawnParticlesPreset {
 ///
 /// Each of the given properties is applied to each of the generated
 /// [DespawnParticles][crate::components::DespawnParticle].
-#[derive(Clone)]
+#[derive(Clone, Event)]
 pub struct DespawnParticlesEvent {
     /// The target entity
     pub entity: Entity,
