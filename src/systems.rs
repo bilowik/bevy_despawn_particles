@@ -1,35 +1,28 @@
+use bevy_asset::{Assets, Handle};
 use bevy_ecs::{
-    system::{
-        EntityCommands, 
-        Query, 
-        Res,
-        ResMut,
-        Commands,
-    },
-    query::AnyOf,
-    event::EventReader,
     entity::Entity,
+    event::EventReader,
+    query::AnyOf,
+    system::{Commands, EntityCommands, Query, Res, ResMut},
+};
+use bevy_math::Vec2;
+use bevy_render::{
+    color::Color,
+    mesh::{shape, Mesh},
+    texture::Image,
 };
 use bevy_render::{
     mesh::{Indices, VertexAttributeValues},
+    prelude::SpatialBundle, // Is this the only place it is publicly available?
     render_resource::PrimitiveTopology,
-    prelude::SpatialBundle,// Is this the only place it is publicly available?
 };
 use bevy_sprite::Mesh2dHandle;
-use bevy_math::Vec2;
-use bevy_render::{
-    texture::Image,
-    mesh::{shape, Mesh},
-    color::Color,
-    
-};
-use bevy_asset::{Handle, Assets};
 
-use bevy_time::Time;
+use bevy_log::{error, warn};
 use bevy_math::Vec3;
-use bevy_log::{warn, error};
-use bevy_sprite::{TextureAtlas, TextureAtlasSprite, Sprite, ColorMaterial};
-use bevy_transform::components::{Transform, GlobalTransform};
+use bevy_sprite::{ColorMaterial, Sprite, TextureAtlas, TextureAtlasSprite};
+use bevy_time::Time;
+use bevy_transform::components::{GlobalTransform, Transform};
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;

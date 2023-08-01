@@ -1,14 +1,13 @@
 use bevy_ecs::{
     component::Component,
     reflect::ReflectComponent,
-    system::{Resource, Query, Res, Local},
+    system::{Local, Query, Res, Resource},
 };
-use bevy_time::{Timer, TimerMode, Time};
 use bevy_reflect::Reflect;
+use bevy_time::{Time, Timer, TimerMode};
 
-use bevy_math::{Vec2, Quat};
+use bevy_math::{Quat, Vec2};
 use bevy_transform::components::Transform;
-
 
 #[derive(Component, Default, Reflect, Copy, Clone)]
 #[reflect(Component)]

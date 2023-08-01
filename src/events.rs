@@ -1,11 +1,8 @@
 //! Event and related utilities for triggering despawn particles events
-use bevy_ecs::{
-    event::Event,
-    entity::Entity,
-};
+use bevy_ecs::{entity::Entity, event::Event};
 
-use bevy_render::mesh::Mesh;
 use bevy_asset::Handle;
+use bevy_render::mesh::Mesh;
 
 use bevy_math::Vec2;
 

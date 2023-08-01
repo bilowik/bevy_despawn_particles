@@ -1,14 +1,11 @@
-use bevy_reflect::TypeUuid;
-use bevy_render::render_resource::{AsBindGroup, ShaderRef, Shader};
-use bevy_sprite::Material2d;
-use bevy_ecs::{
-    component::Component,
-    reflect::ReflectComponent,
-};
-use bevy_reflect::Reflect;
-use bevy_math::Vec2;
 use bevy_asset::{Handle, HandleUntyped};
+use bevy_ecs::{component::Component, reflect::ReflectComponent};
+use bevy_math::Vec2;
+use bevy_reflect::Reflect;
+use bevy_reflect::TypeUuid;
+use bevy_render::render_resource::{AsBindGroup, Shader, ShaderRef};
 use bevy_render::texture::Image;
+use bevy_sprite::Material2d;
 
 pub const DESPAWN_MATERIAL_SHADER_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 13255228607086843049);
@@ -19,7 +16,6 @@ mod bevy {
         pub use bevy_render::*;
     }
 }
-
 
 #[derive(AsBindGroup, TypeUuid, Clone, Reflect)]
 #[uuid = "f3bd99b1-6bd7-4749-97ae-0b526d1b6aed"]

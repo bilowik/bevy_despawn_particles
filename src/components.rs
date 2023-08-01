@@ -1,17 +1,10 @@
 use bevy_render::{mesh::Indices, render_resource::PrimitiveTopology};
 
-use bevy_ecs::{
-    component::Component,
-    bundle::Bundle,
-    reflect::ReflectComponent,
-};
-use bevy_time::{Timer, TimerMode};
+use bevy_asset::{Assets, Handle};
+use bevy_ecs::{bundle::Bundle, component::Component, reflect::ReflectComponent};
 use bevy_reflect::Reflect;
 use bevy_render::mesh::Mesh;
-use bevy_asset::{Assets, Handle};
-
-
-
+use bevy_time::{Timer, TimerMode};
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
