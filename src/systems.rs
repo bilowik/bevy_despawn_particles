@@ -1,12 +1,35 @@
-use bevy::{
-    ecs::system::EntityCommands,
-    prelude::*,
-    render::{
-        mesh::{Indices, VertexAttributeValues},
-        render_resource::PrimitiveTopology,
+use bevy_ecs::{
+    system::{
+        EntityCommands, 
+        Query, 
+        Res,
+        ResMut,
+        Commands,
     },
-    sprite::Mesh2dHandle,
+    query::AnyOf,
+    event::EventReader,
+    entity::Entity,
 };
+use bevy_render::{
+    mesh::{Indices, VertexAttributeValues},
+    render_resource::PrimitiveTopology,
+    prelude::SpatialBundle,// Is this the only place it is publicly available?
+};
+use bevy_sprite::Mesh2dHandle;
+use bevy_math::Vec2;
+use bevy_render::{
+    texture::Image,
+    mesh::{shape, Mesh},
+    color::Color,
+    
+};
+use bevy_asset::{Handle, Assets};
+
+use bevy_time::Time;
+use bevy_math::Vec3;
+use bevy_log::{warn, error};
+use bevy_sprite::{TextureAtlas, TextureAtlasSprite, Sprite, ColorMaterial};
+use bevy_transform::components::{Transform, GlobalTransform};
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
@@ -366,12 +389,12 @@ fn handle_despawn_particles_event(
                         mass: mass.get_value().into(),
                         #[cfg(feature = "rapier")]
                         mass: AdditionalMassProperties::Mass(mass.get_value()),
-                        ..default()
+                        ..Default::default()
                     },
                     Mesh2dHandle::from(meshes.add(mesh)),
                     SpatialBundle {
                         transform: particle_transform,
-                        ..default()
+                        ..Default::default()
                     },
                 ));
 

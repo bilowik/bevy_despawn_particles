@@ -1,4 +1,5 @@
-use bevy::prelude::*;
+use bevy_math::{Vec2, Vec3};
+use bevy_render::mesh::Mesh;
 
 /// Used to get the angle between two points where the reference point is source
 /// IE: Imagine source is (0,0) and target is some (x, y) on the coordinate axis, the angle

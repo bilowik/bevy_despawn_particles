@@ -1,10 +1,10 @@
 #![doc = include_str!("../README.md")]
-use bevy::app::{App, Plugin, Startup, Update};
-use bevy::asset::{load_internal_asset, AddAsset};
-use bevy::ecs::schedule::{IntoSystemConfigs, SystemSet};
-use bevy::render::prelude::Shader;
+use bevy_app::{App, Plugin, Startup, Update};
+use bevy_asset::{load_internal_asset, AddAsset};
+use bevy_ecs::schedule::{IntoSystemConfigs, SystemSet};
+use bevy_render::render_resource::Shader;
 
-use bevy::sprite::Material2dPlugin;
+use bevy_sprite::Material2dPlugin;
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;

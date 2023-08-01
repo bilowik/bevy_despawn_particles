@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use bevy::ecs::prelude::{Entity, Resource};
+use bevy_ecs::prelude::{Entity, Resource};
 
 #[derive(Resource)]
 pub struct DespawnParticlesConfig {
