@@ -16,7 +16,7 @@ pub mod resources;
 mod systems;
 
 #[cfg(not(feature = "rapier"))]
-mod phys;
+pub mod phys;
 
 mod utils;
 
