@@ -81,7 +81,7 @@ pub(crate) fn phys_tick(
     if phys_timer.timer.just_finished() {
         let elapsed = time.elapsed_seconds() - phys_timer.last_run;
         phys_timer.last_run = time.elapsed_seconds();
-        for (mut t, mut v, d, m) in query.iter_mut() {
+        query.par_iter_mut().for_each_mut(|(mut t, mut v, d, m)| {
             v.linvel *= 1.0 / (1.0 + (elapsed * d.linear_damping));
             v.angvel *= 1.0 / (1.0 + (elapsed * d.angular_damping));
 
@@ -91,6 +91,6 @@ pub(crate) fn phys_tick(
 
             t.translation += (v.linvel * elapsed).extend(0.0);
             t.rotation = t.rotation * Quat::from_rotation_z(v.angvel * elapsed);
-        }
+        });
     }
 }
