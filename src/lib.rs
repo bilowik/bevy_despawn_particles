@@ -21,9 +21,7 @@ pub mod phys;
 mod utils;
 
 use despawn::{DespawnMaterial, DESPAWN_MATERIAL_SHADER_HANDLE};
-use events::DespawnParticlesEvent;
-use resources::{DespawnParticleQueue, DespawnParticlesConfig};
-use systems::{
+use events::DespawnParticlesEvent; use resources::{DespawnParticleQueue, DespawnParticlesConfig}; use systems::{
     handle_despawn_particle, handle_despawn_particles_events, max_particles_check, setup,
 };
 
@@ -78,7 +76,7 @@ impl Plugin for DespawnParticlesPlugin {
 }
 
 pub mod prelude {
-    pub use crate::components::{DespawnMeshOverride, DespawnParticle};
+    pub use crate::components::{DespawnMeshOverride, DespawnParticle, DespawnImageOverride};
     pub use crate::events::{DespawnParticlesEvent, DespawnParticlesPreset};
     pub use crate::resources::DespawnParticlesConfig;
     pub use crate::{DespawnParticlesPlugin, DespawnParticlesSet};

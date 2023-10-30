@@ -2,8 +2,7 @@ use bevy_asset::{Assets, Handle};
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    query::AnyOf,
-    system::{Commands, EntityCommands, Query, Res, ResMut},
+    query::AnyOf, system::{Commands, EntityCommands, Query, Res, ResMut},
 };
 use bevy_math::Vec2;
 use bevy_render::{
@@ -121,7 +120,9 @@ fn handle_despawn_particles_event(
     no_death_animations: &Query<&NoDespawnAnimation>,
     velocities: &Query<&Velocity>,
     despawn_mesh_overrides: &Query<&DespawnMeshOverride>,
+    despawn_image_overrides: &Query<&DespawnImageOverride>,
     despawn_particle_queue: &mut DespawnParticleQueue,
+
 ) -> Result<(), DespawnParticlesError> {
     let DespawnParticlesEvent {
         entity,
@@ -161,6 +162,9 @@ fn handle_despawn_particles_event(
         |_entity_cmds: &mut EntityCommands| {}
     };
 
+    // Check for image override
+    let maybe_image_override = despawn_image_overrides.get(*entity).map(|image_override| &image_override.0).ok();
+
     if let Some(mut entity_commands) = commands.get_entity(*entity) {
         entity_commands.despawn();
         // Now spawn the death animation, if possible
@@ -170,9 +174,10 @@ fn handle_despawn_particles_event(
         }
 
         let (mesh_handle, maybe_image_params, maybe_color_material) =
-            if let Ok((sprite, image_handle)) = sprites.get(*entity) {
+            // Check for override here 
+            if let Ok((sprite, image_handle)) = sprites.get(*entity).map(|(s, i)| (s, maybe_image_override.unwrap_or(i))) {
                 let image_size = images
-                    .get(&image_handle)
+                    .get(image_handle)
                     .and_then(|image| Some(image.size()))
                     .ok_or(DespawnParticlesError::InvalidImageHandle)?;
 
@@ -201,7 +206,7 @@ fn handle_despawn_particles_event(
                     },
                 )?;
                 let image = images
-                    .get(&atlas.texture)
+                    .get(maybe_image_override.unwrap_or(&atlas.texture))
                     .ok_or(DespawnParticlesError::InvalidImageHandle)?;
                 let input_size = Vec2::new(rect.width(), rect.height());
                 let mesh = shape::Quad::new(input_size);
@@ -213,6 +218,26 @@ fn handle_despawn_particles_event(
                         input_size,
                         texture_size: image.size(),
                         custom_size: tas.custom_size,
+                    }),
+                    None,
+                )
+            } else if let Some(image_handle) = maybe_image_override {
+                // We don't have a sprite or tas but we do have the override still
+                let image_size = images
+                    .get(image_handle)
+                    .and_then(|image| Some(image.size()))
+                    .ok_or(DespawnParticlesError::InvalidImageHandle)?;
+
+                let mesh = shape::Quad::new(image_size);
+
+                (
+                    meshes.add(mesh.into()).into(),
+                    Some(ImageParams {
+                        offset: Vec2::ZERO,
+                        image_handle: image_handle.clone(),
+                        input_size: image_size,
+                        texture_size: image_size,
+                        custom_size: Some(image_size),
                     }),
                     None,
                 )
@@ -391,6 +416,7 @@ fn handle_despawn_particles_event(
                     },
                 ));
 
+
                 if let Some(image_params) = maybe_image_params.as_ref() {
                     // We have a texture
                     let material = despawn_materials.add(DespawnMaterial {
@@ -438,6 +464,7 @@ pub(crate) fn handle_despawn_particles_events(
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
     despawn_mesh_overrides: Query<&DespawnMeshOverride>,
+    despawn_image_overrides: Query<&DespawnImageOverride>,
     mut despawn_particle_queue: ResMut<DespawnParticleQueue>,
 ) {
     for event in despawn_particles_event_reader.iter() {
@@ -456,6 +483,7 @@ pub(crate) fn handle_despawn_particles_events(
             &no_death_animations,
             &velocities,
             &despawn_mesh_overrides,
+            &despawn_image_overrides,
             &mut despawn_particle_queue,
         ) {
             error!(

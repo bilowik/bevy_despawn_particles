@@ -3,7 +3,7 @@ use bevy_render::{mesh::Indices, render_resource::PrimitiveTopology};
 use bevy_asset::{Assets, Handle};
 use bevy_ecs::{bundle::Bundle, component::Component, reflect::ReflectComponent};
 use bevy_reflect::Reflect;
-use bevy_render::mesh::Mesh;
+use bevy_render::{mesh::Mesh, texture::Image};
 use bevy_time::{Timer, TimerMode};
 
 #[cfg(feature = "rapier")]
@@ -127,3 +127,7 @@ impl DespawnMeshOverride {
         Self(meshes.add(mesh))
     }
 }
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct DespawnImageOverride(pub Handle<Image>);
