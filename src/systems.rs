@@ -399,6 +399,7 @@ fn handle_despawn_particles_event(
                         offset: (image_params.offset / image_params.texture_size),
                         size: (image_params.input_size / image_params.texture_size),
                         gray,
+                        padding: 0,
                     });
                     entity_cmds.insert(material);
                 } else if let Some(color_material_handle) = maybe_color_material.clone() {

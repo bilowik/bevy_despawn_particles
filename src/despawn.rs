@@ -39,6 +39,10 @@ pub struct DespawnMaterial {
     /// When true, grayscale the underlying texture
     #[uniform(2)]
     pub gray: u32,
+    
+    /// ensures 16-byte alignment.
+    #[uniform(2)]
+    pub padding: u32,
 }
 
 impl Material2d for DespawnMaterial {

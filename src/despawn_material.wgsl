@@ -7,7 +7,8 @@ struct DespawnMaterial {
     offset: vec2<f32>,
     size: vec2<f32>,
     alpha: f32,
-    gray: u32
+    gray: u32,
+    padding: u32
 };
 
 @group(1) @binding(0)
