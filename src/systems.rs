@@ -172,8 +172,8 @@ fn handle_despawn_particles_event(
         let (mesh_handle, maybe_image_params, maybe_color_material) =
             if let Ok((sprite, image_handle)) = sprites.get(*entity) {
                 let image_size = images
-                    .get(&image_handle)
-                    .and_then(|image| Some(image.size()))
+                    .get(image_handle)
+                    .and_then(|image| Some(image.size().as_vec2()))
                     .ok_or(DespawnParticlesError::InvalidImageHandle)?;
 
                 let mesh = shape::Quad::new(image_size);
@@ -211,7 +211,7 @@ fn handle_despawn_particles_event(
                         offset: rect.min,
                         image_handle: atlas.texture.clone(),
                         input_size,
-                        texture_size: image.size(),
+                        texture_size: image.size().as_vec2(),
                         custom_size: tas.custom_size,
                     }),
                     None,
@@ -441,7 +441,7 @@ pub(crate) fn handle_despawn_particles_events(
     despawn_mesh_overrides: Query<&DespawnMeshOverride>,
     mut despawn_particle_queue: ResMut<DespawnParticleQueue>,
 ) {
-    for event in despawn_particles_event_reader.iter() {
+    for event in despawn_particles_event_reader.read() {
         if let Err(e) = handle_despawn_particles_event(
             event,
             &mut commands,

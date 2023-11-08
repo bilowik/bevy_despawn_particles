@@ -1,8 +1,7 @@
 #![doc = include_str!("../README.md")]
 use bevy_app::{App, Plugin, Startup, Update};
-use bevy_asset::{load_internal_asset, AddAsset};
+use bevy_asset::embedded_asset;
 use bevy_ecs::schedule::{IntoSystemConfigs, SystemSet};
-use bevy_render::render_resource::Shader;
 
 use bevy_sprite::Material2dPlugin;
 
@@ -20,7 +19,7 @@ pub mod phys;
 
 mod utils;
 
-use despawn::{DespawnMaterial, DESPAWN_MATERIAL_SHADER_HANDLE};
+use despawn::DespawnMaterial;
 use events::DespawnParticlesEvent;
 use resources::{DespawnParticleQueue, DespawnParticlesConfig};
 use systems::{
@@ -38,15 +37,10 @@ pub struct DespawnParticlesSet;
 impl Plugin for DespawnParticlesPlugin {
     fn build(&self, app: &mut App) {
         // Register the flicker mateiral as an internal asset
-        load_internal_asset!(
-            app,
-            DESPAWN_MATERIAL_SHADER_HANDLE,
-            "despawn_material.wgsl",
-            Shader::from_wgsl
-        );
+        embedded_asset!(app, "despawn_material.wgsl");
 
         app.add_plugins(Material2dPlugin::<DespawnMaterial>::default())
-            .register_asset_reflect::<DespawnMaterial>();
+            .register_type::<DespawnMaterial>();
 
         // Register events
         app.add_event::<DespawnParticlesEvent>();

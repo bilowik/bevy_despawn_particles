@@ -1,14 +1,11 @@
-use bevy_asset::{Handle, HandleUntyped};
+use bevy_asset::{Asset, Handle};
 use bevy_ecs::{component::Component, reflect::ReflectComponent};
 use bevy_math::Vec2;
 use bevy_reflect::Reflect;
 use bevy_reflect::TypeUuid;
-use bevy_render::render_resource::{AsBindGroup, Shader, ShaderRef};
+use bevy_render::render_resource::{AsBindGroup, ShaderRef};
 use bevy_render::texture::Image;
 use bevy_sprite::Material2d;
-
-pub const DESPAWN_MATERIAL_SHADER_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 13255228607086843049);
 
 // Needed for AsBindGroup derive macro since it expects the bevy crate.
 mod bevy {
@@ -17,7 +14,7 @@ mod bevy {
     }
 }
 
-#[derive(AsBindGroup, TypeUuid, Clone, Reflect)]
+#[derive(AsBindGroup, TypeUuid, Clone, Reflect, Asset)]
 #[uuid = "f3bd99b1-6bd7-4749-97ae-0b526d1b6aed"]
 pub struct DespawnMaterial {
     #[texture(0)]
@@ -39,7 +36,7 @@ pub struct DespawnMaterial {
     /// When true, grayscale the underlying texture
     #[uniform(2)]
     pub gray: u32,
-    
+
     /// ensures 16-byte alignment.
     #[uniform(2)]
     pub padding: u32,
@@ -47,7 +44,7 @@ pub struct DespawnMaterial {
 
 impl Material2d for DespawnMaterial {
     fn fragment_shader() -> ShaderRef {
-        DESPAWN_MATERIAL_SHADER_HANDLE.typed().into()
+        "embedded://despawn_material.wgsl".into()
     }
 }
 
