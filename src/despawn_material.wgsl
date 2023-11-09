@@ -1,6 +1,6 @@
 #import bevy_sprite::mesh2d_view_bindings
 #import bevy_pbr::utils
-#import bevy_sprite::mesh2d_vertex_output MeshVertexOutput
+#import bevy_sprite::mesh2d_vertex_output::VertexOutput
 
 
 struct DespawnMaterial {
@@ -22,7 +22,7 @@ var<uniform> despawn_material: DespawnMaterial;
 
 
 @fragment
-fn fragment(in: MeshVertexOutput) -> @location(0) vec4<f32> {
+fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let old_range = 1.0;
     let new_range = despawn_material.size;
     let uv = ((in.uv * new_range) + despawn_material.offset);
