@@ -26,6 +26,8 @@ use systems::{
     handle_despawn_particle, handle_despawn_particles_events, max_particles_check, setup,
 };
 
+use std::path::{PathBuf, Path};
+
 /// The despawn particle plugin. Required to utilize this crate.
 #[derive(Default)]
 pub struct DespawnParticlesPlugin;
@@ -37,7 +39,16 @@ pub struct DespawnParticlesSet;
 impl Plugin for DespawnParticlesPlugin {
     fn build(&self, app: &mut App) {
         // Register the flicker mateiral as an internal asset
-        embedded_asset!(app, "despawn_material.wgsl");
+        let embedded = app
+            .world
+            .resource_mut::<::bevy_asset::io::embedded::EmbeddedAssetRegistry>();
+        let path = Path::new("despawn_material.wgsl");
+        embedded
+            .insert_asset(
+                PathBuf::new(),
+                &path,
+                include_bytes!("despawn_material.wgsl")
+            );
 
         app.add_plugins(Material2dPlugin::<DespawnMaterial>::default())
             .register_type::<DespawnMaterial>();
