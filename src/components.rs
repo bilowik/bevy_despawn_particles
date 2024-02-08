@@ -127,3 +127,7 @@ impl DespawnMeshOverride {
         Self(meshes.add(mesh))
     }
 }
+
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
+pub struct NoDespawnAnimation;

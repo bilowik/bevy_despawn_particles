@@ -47,7 +47,3 @@ impl Material2d for DespawnMaterial {
         "embedded://despawn_material.wgsl".into()
     }
 }
-
-#[derive(Component, Default, Reflect)]
-#[reflect(Component)]
-pub struct NoDespawnAnimation;
