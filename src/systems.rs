@@ -37,7 +37,7 @@ use crate::phys::{Damping, Velocity};
 
 use crate::{
     components::*,
-    despawn::{DespawnMaterial, NoDespawnAnimation},
+    despawn::DespawnMaterial,
     events::DespawnParticlesEvent,
     resources::{DespawnParticleQueue, DespawnParticlesConfig},
     utils::{angle_between3, float32x3_sub, float32x3_triangle_centroid},
