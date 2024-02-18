@@ -26,8 +26,8 @@ bevy_hierarchy = "0.13.0"
 bevy_log = "0.13.0"        
 bevy_transform = "0.13.0"  
 rand = "0.8.5"
-bevy_rapier2d = { version = "0.23.0", optional = true }
-bevy_variable_property = "0.1.0-pre.4"
+bevy_rapier2d = { version = "0.24.0", optional = true }
+bevy_variable_property = "0.1.0-pre.5"
 smallvec = { version = "1.11.0", features = ["const_generics"] }
 thiserror = "1.0.43"
 
