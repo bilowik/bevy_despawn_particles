@@ -25,7 +25,7 @@ use systems::{
     handle_despawn_particle, handle_despawn_particles_events, max_particles_check, setup,
 };
 
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 /// The despawn particle plugin. Required to utilize this crate.
 #[derive(Default)]
@@ -42,12 +42,11 @@ impl Plugin for DespawnParticlesPlugin {
             .world
             .resource_mut::<::bevy_asset::io::embedded::EmbeddedAssetRegistry>();
         let path = Path::new("despawn_material.wgsl");
-        embedded
-            .insert_asset(
-                PathBuf::new(),
-                &path,
-                include_bytes!("despawn_material.wgsl")
-            );
+        embedded.insert_asset(
+            PathBuf::new(),
+            &path,
+            include_bytes!("despawn_material.wgsl"),
+        );
 
         app.add_plugins(Material2dPlugin::<DespawnMaterial>::default())
             .register_type::<DespawnMaterial>();

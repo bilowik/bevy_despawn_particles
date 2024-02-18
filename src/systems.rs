@@ -5,13 +5,8 @@ use bevy_ecs::{
     query::{AnyOf, With, Without},
     system::{Commands, EntityCommands, Query, Res, ResMut},
 };
-use bevy_math::{Vec2, primitives::Rectangle};
-use bevy_render::{
-    color::Color,
-    mesh::Mesh,
-    texture::Image,
-    render_asset::RenderAssetUsages,
-};
+use bevy_math::{primitives::Rectangle, Vec2};
+use bevy_render::{color::Color, mesh::Mesh, render_asset::RenderAssetUsages, texture::Image};
 use bevy_render::{
     mesh::{Indices, VertexAttributeValues},
     prelude::SpatialBundle, // Is this the only place it is publicly available?
@@ -595,7 +590,10 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Desp
             .as_slice()
             .chunks(3)
             .map(|indices| {
-                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+                let mut mesh = Mesh::new(
+                    PrimitiveTopology::TriangleList,
+                    RenderAssetUsages::default(),
+                );
 
                 mesh.insert_attribute(
                     Mesh::ATTRIBUTE_POSITION,
@@ -715,7 +713,10 @@ fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
 
             // Create the two new triangles
             for idx in (0..3).filter(|idx| *idx != longest_idx) {
-                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+                let mut mesh = Mesh::new(
+                    PrimitiveTopology::TriangleList,
+                    RenderAssetUsages::default(),
+                );
                 mesh.insert_attribute(
                     Mesh::ATTRIBUTE_NORMAL,
                     vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]],
@@ -767,7 +768,10 @@ fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
                     vec![mps_uvs[0], mps_uvs[1], mps_uvs[2]],
                 ),
             ] {
-                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+                let mut mesh = Mesh::new(
+                    PrimitiveTopology::TriangleList,
+                    RenderAssetUsages::default(),
+                );
                 mesh.insert_attribute(
                     Mesh::ATTRIBUTE_NORMAL,
                     vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]],
