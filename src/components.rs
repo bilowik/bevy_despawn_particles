@@ -3,7 +3,10 @@ use bevy_render::{mesh::Indices, render_resource::PrimitiveTopology};
 use bevy_asset::{Assets, Handle};
 use bevy_ecs::{bundle::Bundle, component::Component, reflect::ReflectComponent};
 use bevy_reflect::Reflect;
-use bevy_render::mesh::Mesh;
+use bevy_render::{
+    mesh::Mesh,
+    render_asset::RenderAssetUsages,
+};
 use bevy_time::{Timer, TimerMode};
 
 #[cfg(feature = "rapier")]
@@ -118,11 +121,11 @@ impl DespawnMeshOverride {
             .map(|[x, y, _]| [(x + radius) / diameter, (y - radius) / (-diameter)])
             .collect::<Vec<_>>();
 
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
-        mesh.set_indices(Some(Indices::U32(indices)));
+        mesh.insert_indices(Indices::U32(indices));
 
         Self(meshes.add(mesh))
     }

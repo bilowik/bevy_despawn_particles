@@ -1,8 +1,6 @@
 use bevy_asset::{Asset, Handle};
-use bevy_ecs::{component::Component, reflect::ReflectComponent};
 use bevy_math::Vec2;
 use bevy_reflect::Reflect;
-use bevy_reflect::TypeUuid;
 use bevy_render::render_resource::{AsBindGroup, ShaderRef};
 use bevy_render::texture::Image;
 use bevy_sprite::Material2d;
@@ -14,8 +12,7 @@ mod bevy {
     }
 }
 
-#[derive(AsBindGroup, TypeUuid, Clone, Reflect, Asset)]
-#[uuid = "f3bd99b1-6bd7-4749-97ae-0b526d1b6aed"]
+#[derive(AsBindGroup, Clone, Reflect, Asset)]
 pub struct DespawnMaterial {
     #[texture(0)]
     #[sampler(1)]

@@ -2,14 +2,15 @@ use bevy_asset::{Assets, Handle};
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    query::AnyOf,
+    query::{AnyOf, With, Without},
     system::{Commands, EntityCommands, Query, Res, ResMut},
 };
-use bevy_math::Vec2;
+use bevy_math::{Vec2, primitives::Rectangle};
 use bevy_render::{
     color::Color,
-    mesh::{shape, Mesh},
+    mesh::Mesh,
     texture::Image,
+    render_asset::RenderAssetUsages,
 };
 use bevy_render::{
     mesh::{Indices, VertexAttributeValues},
@@ -20,7 +21,7 @@ use bevy_sprite::Mesh2dHandle;
 
 use bevy_log::{error, warn};
 use bevy_math::Vec3;
-use bevy_sprite::{ColorMaterial, Sprite, TextureAtlas, TextureAtlasSprite};
+use bevy_sprite::{ColorMaterial, Sprite, TextureAtlas, TextureAtlasLayout};
 use bevy_time::Time;
 use bevy_transform::components::{GlobalTransform, Transform};
 
@@ -111,11 +112,11 @@ fn handle_despawn_particles_event(
     commands: &mut Commands,
     images: &Assets<Image>,
     meshes: &mut Assets<Mesh>,
-    atlases: &Assets<TextureAtlas>,
+    atlas_layouts: &Assets<TextureAtlasLayout>,
     global_transforms: &Query<&GlobalTransform>,
     despawn_materials: &mut Assets<DespawnMaterial>,
-    sprites: &Query<(&Sprite, &Handle<Image>)>,
-    tass: &Query<(&TextureAtlasSprite, &Handle<TextureAtlas>)>,
+    sprites: &Query<(&Sprite, &Handle<Image>), Without<TextureAtlas>>,
+    tass: &Query<(&Sprite, &TextureAtlas, &Handle<Image>), With<TextureAtlas>>,
     mesh_components: &Query<(&Mesh2dHandle, Option<&Handle<ColorMaterial>>)>,
     color_materials: &mut Assets<ColorMaterial>,
     no_death_animations: &Query<&NoDespawnAnimation>,
@@ -176,10 +177,10 @@ fn handle_despawn_particles_event(
                     .and_then(|image| Some(image.size().as_vec2()))
                     .ok_or(DespawnParticlesError::InvalidImageHandle)?;
 
-                let mesh = shape::Quad::new(image_size);
+                let mesh = Rectangle::new(image_size.x, image_size.y);
 
                 (
-                    meshes.add(mesh.into()).into(),
+                    meshes.add(mesh).into(),
                     Some(ImageParams {
                         offset: Vec2::ZERO,
                         image_handle: image_handle.clone(),
@@ -189,30 +190,30 @@ fn handle_despawn_particles_event(
                     }),
                     None,
                 )
-            } else if let Ok((tas, ta_handle)) = tass.get(*entity) {
-                let atlas = atlases
-                    .get(ta_handle)
+            } else if let Ok((sprite, tas, image_handle)) = tass.get(*entity) {
+                let atlas_layout = atlas_layouts
+                    .get(&tas.layout)
                     .ok_or(DespawnParticlesError::InvalidTextureAtlasHandle)?;
 
-                let rect = atlas.textures.get(tas.index).ok_or(
+                let rect = atlas_layout.textures.get(tas.index).ok_or(
                     DespawnParticlesError::InvalidTextureAtlasIndex {
                         index: tas.index,
-                        max_index: atlas.textures.len(),
+                        max_index: atlas_layout.textures.len(),
                     },
                 )?;
                 let image = images
-                    .get(&atlas.texture)
+                    .get(image_handle)
                     .ok_or(DespawnParticlesError::InvalidImageHandle)?;
                 let input_size = Vec2::new(rect.width(), rect.height());
-                let mesh = shape::Quad::new(input_size);
+                let mesh = Rectangle::new(input_size.x, input_size.y);
                 (
-                    meshes.add(mesh.into()).into(),
+                    meshes.add(mesh).into(),
                     Some(ImageParams {
                         offset: rect.min,
-                        image_handle: atlas.texture.clone(),
+                        image_handle: image_handle.clone(),
                         input_size,
                         texture_size: image.size().as_vec2(),
-                        custom_size: tas.custom_size,
+                        custom_size: sprite.custom_size,
                     }),
                     None,
                 )
@@ -272,7 +273,7 @@ fn handle_despawn_particles_event(
             if mesh.indices().is_none() {
                 // We have no indices, so add them by hand and return the number of
                 // triangles after
-                mesh.set_indices(Some(Indices::U32((0..(vertices.len() as u32)).collect())));
+                mesh.insert_indices(Indices::U32((0..(vertices.len() as u32)).collect()));
             }
 
             // Break down the triangles into individual meshes
@@ -428,11 +429,11 @@ pub(crate) fn handle_despawn_particles_events(
     mut commands: Commands,
     images: Res<Assets<Image>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    atlases: Res<Assets<TextureAtlas>>,
+    atlas_layouts: Res<Assets<TextureAtlasLayout>>,
     global_transforms: Query<&GlobalTransform>,
     mut despawn_materials: ResMut<Assets<DespawnMaterial>>,
-    sprites: Query<(&Sprite, &Handle<Image>)>,
-    tass: Query<(&TextureAtlasSprite, &Handle<TextureAtlas>)>,
+    sprites: Query<(&Sprite, &Handle<Image>), Without<TextureAtlas>>,
+    tass: Query<(&Sprite, &TextureAtlas, &Handle<Image>), With<TextureAtlas>>,
     mesh_components: Query<(&Mesh2dHandle, Option<&Handle<ColorMaterial>>)>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut despawn_particles_event_reader: EventReader<DespawnParticlesEvent>,
@@ -447,7 +448,7 @@ pub(crate) fn handle_despawn_particles_events(
             &mut commands,
             &images,
             &mut meshes,
-            &atlases,
+            &atlas_layouts,
             &global_transforms,
             &mut despawn_materials,
             &sprites,
@@ -498,7 +499,7 @@ pub(crate) fn handle_despawn_particle(
                 entity_commands.despawn();
             }
         }
-        let percent = despawn_particle.lifetime.percent_left();
+        let percent = despawn_particle.lifetime.fraction_remaining();
         if let Some(despawn_material) = maybe_fade
             .and_then(|_| maybe_despawn_material_handle)
             .and_then(|handle| despawn_materials.get_mut(handle))
@@ -573,9 +574,9 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Desp
         } else {
             // No indices provided, add them in
             let indices = (0..vertices.len()).collect::<Vec<_>>();
-            mesh.set_indices(Some(Indices::U32(
+            mesh.insert_indices(Indices::U32(
                 indices.iter().map(|i| *i as u32).collect::<Vec<_>>(),
-            )));
+            ));
             indices
         };
 
@@ -594,7 +595,7 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Desp
             .as_slice()
             .chunks(3)
             .map(|indices| {
-                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
 
                 mesh.insert_attribute(
                     Mesh::ATTRIBUTE_POSITION,
@@ -609,7 +610,7 @@ pub fn split_mesh(mut mesh: Mesh, target_count: usize) -> Result<Vec<Mesh>, Desp
                     indices.iter().map(|idx| normals[*idx]).collect::<Vec<_>>(),
                 );
 
-                mesh.set_indices(Some(Indices::U32(vec![0, 1, 2])));
+                mesh.insert_indices(Indices::U32(vec![0, 1, 2]));
                 mesh
             })
             .collect::<Vec<_>>();
@@ -714,7 +715,7 @@ fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
 
             // Create the two new triangles
             for idx in (0..3).filter(|idx| *idx != longest_idx) {
-                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
                 mesh.insert_attribute(
                     Mesh::ATTRIBUTE_NORMAL,
                     vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]],
@@ -727,7 +728,7 @@ fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
                     Mesh::ATTRIBUTE_UV_0,
                     [uvs[longest_idx], uv_mid, uvs[idx]].to_vec(),
                 );
-                mesh.set_indices(Some(Indices::U32(vec![0, 1, 2])));
+                mesh.insert_indices(Indices::U32(vec![0, 1, 2]));
                 split_mesh_inner(mesh, depth - 1, output);
             }
         } else {
@@ -766,14 +767,14 @@ fn split_mesh_inner(mesh: Mesh, depth: usize, output: &mut Vec<Mesh>) {
                     vec![mps_uvs[0], mps_uvs[1], mps_uvs[2]],
                 ),
             ] {
-                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+                let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
                 mesh.insert_attribute(
                     Mesh::ATTRIBUTE_NORMAL,
                     vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]],
                 );
                 mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
                 mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
-                mesh.set_indices(Some(Indices::U32(vec![0, 1, 2])));
+                mesh.insert_indices(Indices::U32(vec![0, 1, 2]));
 
                 // depth - 2 here since we broke 1 triangle into 4 instead of just 2.
                 split_mesh_inner(mesh, depth - 2, output);

@@ -24,7 +24,7 @@ fn main() {
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    atlases: ResMut<Assets<TextureAtlas>>,
+    atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     commands.spawn(Camera2dBundle::default());
     spawn(commands, atlases, asset_server);
@@ -37,7 +37,7 @@ fn tick(
     commands: Commands,
     asset_server: Res<AssetServer>,
     marker: Query<Entity, With<Marker>>,
-    atlases: ResMut<Assets<TextureAtlas>>,
+    atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     timer.0.tick(time.delta());
     if timer.0.just_finished() {
@@ -63,23 +63,22 @@ fn tick(
 
 fn spawn(
     mut commands: Commands,
-    mut atlases: ResMut<Assets<TextureAtlas>>,
+    mut atlases: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
 ) {
     commands
         .spawn(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                index: 2,
-                ..default()
+            atlas: TextureAtlas {
+                layout: atlases.add(TextureAtlasLayout::from_grid(
+                    Vec2::splat(64.),
+                    1,
+                    4,
+                    None,
+                    None,
+                )),
+                index: 0,
             },
-            texture_atlas: atlases.add(TextureAtlas::from_grid(
-                asset_server.load("asteroid_sheet_test.png"),
-                Vec2::splat(64.),
-                1,
-                4,
-                None,
-                None,
-            )),
+            texture: asset_server.load("asteroid_sheet_test.png"),
             ..default()
         })
         .insert(Marker);
