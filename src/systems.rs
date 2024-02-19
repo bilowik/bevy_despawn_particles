@@ -2,7 +2,7 @@ use bevy_asset::{Assets, Handle};
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
-    query::{AnyOf, With, Without},
+    query::AnyOf,
     system::{Commands, EntityCommands, Query, Res, ResMut},
 };
 use bevy_math::{primitives::Rectangle, Vec2};
@@ -62,14 +62,8 @@ pub enum DespawnParticlesError {
     #[error("Could not fetch Image resource with the given handle")]
     InvalidImageHandle,
 
-    #[error("Could not fetch TextureAtlas resource with the given handle")]
-    InvalidTextureAtlasHandle,
-
     #[error("Could not fetch Mesh resource with the given handle")]
     InvalidMeshHandle,
-
-    #[error("Invalid index set for the given TextureAtlas: index={index} max_index={max_index}")]
-    InvalidTextureAtlasIndex { index: usize, max_index: usize },
 
     #[error("The given Entity does not have a mesh or sprite to build particles from")]
     EntityMissingComponents,
@@ -110,8 +104,7 @@ fn handle_despawn_particles_event(
     atlas_layouts: &Assets<TextureAtlasLayout>,
     global_transforms: &Query<&GlobalTransform>,
     despawn_materials: &mut Assets<DespawnMaterial>,
-    sprites: &Query<(&Sprite, &Handle<Image>), Without<TextureAtlas>>,
-    tass: &Query<(&Sprite, &TextureAtlas, &Handle<Image>), With<TextureAtlas>>,
+    sprites: &Query<(&Sprite, &Handle<Image>, Option<&TextureAtlas>)>,
     mesh_components: &Query<(&Mesh2dHandle, Option<&Handle<ColorMaterial>>)>,
     color_materials: &mut Assets<ColorMaterial>,
     no_death_animations: &Query<&NoDespawnAnimation>,
@@ -166,48 +159,28 @@ fn handle_despawn_particles_event(
         }
 
         let (mesh_handle, maybe_image_params, maybe_color_material) =
-            if let Ok((sprite, image_handle)) = sprites.get(*entity) {
+            if let Ok((sprite, image_handle, maybe_texture_atlas)) = sprites.get(*entity) {
                 let image_size = images
                     .get(image_handle)
                     .and_then(|image| Some(image.size().as_vec2()))
                     .ok_or(DespawnParticlesError::InvalidImageHandle)?;
 
-                let mesh = Rectangle::new(image_size.x, image_size.y);
+                // Get input_size and offset from atlas if it exists, else default to
+                // no offset and the full images size.
+                let (input_size, offset) = maybe_texture_atlas
+                    .and_then(|atlas| atlas.texture_rect(&atlas_layouts))
+                    .map(|rect| (Vec2::new(rect.width(), rect.height()), rect.min))
+                    .unwrap_or((image_size, Vec2::ZERO));
 
-                (
-                    meshes.add(mesh).into(),
-                    Some(ImageParams {
-                        offset: Vec2::ZERO,
-                        image_handle: image_handle.clone(),
-                        input_size: image_size,
-                        texture_size: image_size,
-                        custom_size: sprite.custom_size,
-                    }),
-                    None,
-                )
-            } else if let Ok((sprite, tas, image_handle)) = tass.get(*entity) {
-                let atlas_layout = atlas_layouts
-                    .get(&tas.layout)
-                    .ok_or(DespawnParticlesError::InvalidTextureAtlasHandle)?;
-
-                let rect = atlas_layout.textures.get(tas.index).ok_or(
-                    DespawnParticlesError::InvalidTextureAtlasIndex {
-                        index: tas.index,
-                        max_index: atlas_layout.textures.len(),
-                    },
-                )?;
-                let image = images
-                    .get(image_handle)
-                    .ok_or(DespawnParticlesError::InvalidImageHandle)?;
-                let input_size = Vec2::new(rect.width(), rect.height());
                 let mesh = Rectangle::new(input_size.x, input_size.y);
+
                 (
                     meshes.add(mesh).into(),
                     Some(ImageParams {
-                        offset: rect.min,
+                        offset,
                         image_handle: image_handle.clone(),
                         input_size,
-                        texture_size: image.size().as_vec2(),
+                        texture_size: image_size,
                         custom_size: sprite.custom_size,
                     }),
                     None,
@@ -427,8 +400,7 @@ pub(crate) fn handle_despawn_particles_events(
     atlas_layouts: Res<Assets<TextureAtlasLayout>>,
     global_transforms: Query<&GlobalTransform>,
     mut despawn_materials: ResMut<Assets<DespawnMaterial>>,
-    sprites: Query<(&Sprite, &Handle<Image>), Without<TextureAtlas>>,
-    tass: Query<(&Sprite, &TextureAtlas, &Handle<Image>), With<TextureAtlas>>,
+    sprites: Query<(&Sprite, &Handle<Image>, Option<&TextureAtlas>)>,
     mesh_components: Query<(&Mesh2dHandle, Option<&Handle<ColorMaterial>>)>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut despawn_particles_event_reader: EventReader<DespawnParticlesEvent>,
@@ -447,7 +419,6 @@ pub(crate) fn handle_despawn_particles_events(
             &global_transforms,
             &mut despawn_materials,
             &sprites,
-            &tass,
             &mesh_components,
             &mut color_materials,
             &no_death_animations,
