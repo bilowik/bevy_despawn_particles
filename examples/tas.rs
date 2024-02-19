@@ -76,7 +76,7 @@ fn spawn(
                     None,
                     None,
                 )),
-                index: 0,
+                index: 2,
             },
             texture: asset_server.load("asteroid_sheet_test.png"),
             ..default()
