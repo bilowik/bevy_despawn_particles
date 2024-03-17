@@ -19,6 +19,7 @@ use bevy_math::Vec3;
 use bevy_sprite::{ColorMaterial, Sprite, TextureAtlas, TextureAtlasLayout};
 use bevy_time::Time;
 use bevy_transform::components::{GlobalTransform, Transform};
+use bevy_hierarchy::DespawnRecursiveExt;
 
 #[cfg(feature = "rapier")]
 use bevy_rapier2d::prelude::*;
@@ -127,6 +128,7 @@ fn handle_despawn_particles_event(
         mesh_override: event_mesh_override,
         target_num_particles,
         gray,
+        recurse,
     } = event;
     let target_num_particles = target_num_particles.get_value();
 
@@ -151,7 +153,13 @@ fn handle_despawn_particles_event(
     };
 
     if let Some(mut entity_commands) = commands.get_entity(*entity) {
-        entity_commands.despawn();
+        if *recurse {
+            entity_commands.despawn_recursive();
+        }
+        else {
+            entity_commands.despawn();
+
+        }
         // Now spawn the death animation, if possible
         if no_death_animations.get(*entity).is_ok() {
             // We ignore death animations for this object.

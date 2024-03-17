@@ -26,6 +26,7 @@ impl DespawnParticlesPreset {
             mesh_override: self.mesh_override.clone(),
             target_num_particles: self.target_num_particles.clone(),
             gray: false,
+            recurse: false,
         }
     }
 }
@@ -83,6 +84,9 @@ pub struct DespawnParticlesEvent {
 
     /// When true, will grayscale the particles
     pub gray: bool,
+    
+    /// When true, despawns the entities children as well.
+    pub recurse: bool,
 }
 
 /// The builder struct for [DespawnParticlesEvent], typically this should be instantiated with
@@ -102,6 +106,7 @@ pub struct DespawnParticlesEventBuilder {
     pub mesh_override: Option<Handle<Mesh>>,
     pub target_num_particles: Property<usize>,
     pub gray: bool,
+    pub recurse: bool,
 }
 
 impl DespawnParticlesEvent {
@@ -126,6 +131,7 @@ impl DespawnParticlesEventBuilder {
             mesh_override: None,
             target_num_particles: 64.into(),
             gray: false,
+            recurse: false,
         }
     }
 
@@ -205,6 +211,12 @@ impl DespawnParticlesEventBuilder {
         self
     }
 
+    /// See [DespawnParticlesEvent::recurse]
+    pub fn with_recurse(mut self, recurse: bool) -> Self {
+        self.recurse = recurse;
+        self
+    }
+
     pub fn build(self, entity: Entity) -> DespawnParticlesEvent {
         DespawnParticlesEvent {
             entity,
@@ -221,6 +233,7 @@ impl DespawnParticlesEventBuilder {
             mesh_override: self.mesh_override,
             target_num_particles: self.target_num_particles,
             gray: self.gray,
+            recurse: self.recurse,
         }
     }
 }
