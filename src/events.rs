@@ -84,7 +84,7 @@ pub struct DespawnParticlesEvent {
 
     /// When true, will grayscale the particles
     pub gray: bool,
-    
+
     /// When true, despawns the entities children as well.
     pub recurse: bool,
 }

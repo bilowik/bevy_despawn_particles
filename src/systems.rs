@@ -1,4 +1,5 @@
 use bevy_asset::{Assets, Handle};
+use bevy_color::{palettes::basic::GRAY, Alpha, LinearRgba};
 use bevy_ecs::{
     entity::Entity,
     event::EventReader,
@@ -6,7 +7,8 @@ use bevy_ecs::{
     system::{Commands, EntityCommands, Query, Res, ResMut},
 };
 use bevy_math::{primitives::Rectangle, Vec2};
-use bevy_render::{color::Color, mesh::Mesh, render_asset::RenderAssetUsages, texture::Image};
+
+use bevy_render::{mesh::Mesh, render_asset::RenderAssetUsages, texture::Image};
 use bevy_render::{
     mesh::{Indices, VertexAttributeValues},
     prelude::SpatialBundle, // Is this the only place it is publicly available?
@@ -14,14 +16,14 @@ use bevy_render::{
 };
 use bevy_sprite::Mesh2dHandle;
 
+use bevy_hierarchy::DespawnRecursiveExt;
 use bevy_log::{error, warn};
 use bevy_math::Vec3;
 use bevy_sprite::{ColorMaterial, Sprite, TextureAtlas, TextureAtlasLayout};
 use bevy_time::Time;
 use bevy_transform::components::{GlobalTransform, Transform};
-use bevy_hierarchy::DespawnRecursiveExt;
 
-#[cfg(feature = "rapier")]
+#[cfg(feature = "bevy_rapier2d")]
 use bevy_rapier2d::prelude::*;
 
 use bevy_variable_property::prelude::*;
@@ -29,7 +31,7 @@ use bevy_variable_property::prelude::*;
 use smallvec::SmallVec;
 use thiserror::Error;
 
-#[cfg(not(feature = "rapier"))]
+#[cfg(not(feature = "bevy_rapier2d"))]
 use crate::phys::{Damping, Velocity};
 
 use crate::{
@@ -155,10 +157,8 @@ fn handle_despawn_particles_event(
     if let Some(mut entity_commands) = commands.get_entity(*entity) {
         if *recurse {
             entity_commands.despawn_recursive();
-        }
-        else {
+        } else {
             entity_commands.despawn();
-
         }
         // Now spawn the death animation, if possible
         if no_death_animations.get(*entity).is_ok() {
@@ -177,7 +177,12 @@ fn handle_despawn_particles_event(
                 // no offset and the full images size.
                 let (input_size, offset) = maybe_texture_atlas
                     .and_then(|atlas| atlas.texture_rect(&atlas_layouts))
-                    .map(|rect| (Vec2::new(rect.width(), rect.height()), rect.min))
+                    .map(|rect| {
+                        (
+                            Vec2::new(rect.width() as f32, rect.height() as f32),
+                            rect.min.as_vec2(),
+                        )
+                    })
                     .unwrap_or((image_size, Vec2::ZERO));
 
                 let mesh = Rectangle::new(input_size.x, input_size.y);
@@ -197,11 +202,14 @@ fn handle_despawn_particles_event(
                 let base_color = maybe_color_material
                     .and_then(|handle| color_materials.get(handle))
                     .and_then(|material| Some(material.color))
-                    .unwrap_or(Color::GRAY);
+                    .unwrap_or(GRAY.into());
                 let final_color = if gray == 1 {
-                    let mixed_shade =
-                        base_color.r() * 0.299 + base_color.g() * 0.587 + base_color.b() * 0.114;
-                    Color::rgba(mixed_shade, mixed_shade, mixed_shade, base_color.a())
+                    let linear_color = base_color.to_linear();
+                    let mixed_shade = linear_color.red * 0.299
+                        + linear_color.green * 0.587
+                        + linear_color.blue * 0.114;
+                    LinearRgba::new(mixed_shade, mixed_shade, mixed_shade, linear_color.alpha)
+                        .into()
                 } else {
                     base_color
                 };
@@ -355,9 +363,9 @@ fn handle_despawn_particles_event(
                             linear_damping: linear_damping.get_value(),
                             angular_damping: angular_damping.get_value(),
                         },
-                        #[cfg(not(feature = "rapier"))]
+                        #[cfg(not(feature = "bevy_rapier2d"))]
                         mass: mass.get_value().into(),
-                        #[cfg(feature = "rapier")]
+                        #[cfg(feature = "bevy_rapier2d")]
                         mass: AdditionalMassProperties::Mass(mass.get_value()),
                         ..Default::default()
                     },
@@ -385,7 +393,7 @@ fn handle_despawn_particles_event(
                     entity_cmds.insert(OriginalAlpha(
                         color_materials
                             .get(&color_material_handle)
-                            .and_then(|material| Some(material.color.a()))
+                            .and_then(|material| Some(material.color.alpha()))
                             .unwrap_or(1.0),
                     ));
                 }
@@ -482,7 +490,12 @@ pub(crate) fn handle_despawn_particle(
         } else if let Some((color_material, original_alpha)) = maybe_color_material_handle_and_alpha
             .and_then(|(handle, a)| color_materials.get_mut(handle).zip(Some(a)))
         {
-            color_material.color.set_a(original_alpha.0 * percent);
+            let orig_color = color_material.color.to_linear();
+            color_material.color = LinearRgba {
+                alpha: original_alpha.0 * percent,
+                ..orig_color
+            }
+            .into();
         }
         if maybe_shrink.is_some() {
             transform.scale = Vec3::splat(percent);

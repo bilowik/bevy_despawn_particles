@@ -4,7 +4,7 @@ use bevy_ecs::schedule::{IntoSystemConfigs, SystemSet};
 
 use bevy_sprite::Material2dPlugin;
 
-#[cfg(feature = "rapier")]
+#[cfg(feature = "bevy_rapier2d")]
 use bevy_rapier2d::prelude::*;
 
 pub mod components;
@@ -13,7 +13,7 @@ pub mod events;
 pub mod resources;
 mod systems;
 
-#[cfg(not(feature = "rapier"))]
+#[cfg(not(feature = "bevy_rapier2d"))]
 pub mod phys;
 
 mod utils;
@@ -39,7 +39,7 @@ impl Plugin for DespawnParticlesPlugin {
     fn build(&self, app: &mut App) {
         // Register the flicker mateiral as an internal asset
         let embedded = app
-            .world
+            .world_mut()
             .resource_mut::<::bevy_asset::io::embedded::EmbeddedAssetRegistry>();
         let path = Path::new("despawn_material.wgsl");
         embedded.insert_asset(
@@ -67,15 +67,15 @@ impl Plugin for DespawnParticlesPlugin {
         app.init_resource::<DespawnParticlesConfig>();
         app.init_resource::<DespawnParticleQueue>();
 
-        #[cfg(not(feature = "rapier"))]
+        #[cfg(not(feature = "bevy_rapier2d"))]
         {
             app.add_systems(Update, phys::phys_tick.in_set(DespawnParticlesSet));
             app.init_resource::<phys::Gravity>();
         }
 
-        #[cfg(feature = "rapier")]
+        #[cfg(feature = "bevy_rapier2d")]
         {
-            app.add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0));
+            app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0));
         }
     }
 }

@@ -6,10 +6,10 @@ use bevy_reflect::Reflect;
 use bevy_render::{mesh::Mesh, render_asset::RenderAssetUsages};
 use bevy_time::{Timer, TimerMode};
 
-#[cfg(feature = "rapier")]
+#[cfg(feature = "bevy_rapier2d")]
 use bevy_rapier2d::prelude::*;
 
-#[cfg(not(feature = "rapier"))]
+#[cfg(not(feature = "bevy_rapier2d"))]
 use crate::phys::*;
 
 /// A particle with an expiration
@@ -48,7 +48,7 @@ pub(crate) struct DespawnParticleBundle {
     pub mass: AdditionalMassProperties,
     pub velocity: Velocity,
     pub damping: Damping,
-    #[cfg(feature = "rapier")]
+    #[cfg(feature = "bevy_rapier2d")]
     pub rigid_body: RigidBody,
 }
 
@@ -56,13 +56,13 @@ impl Default for DespawnParticleBundle {
     fn default() -> Self {
         Self {
             despawn_particle: Default::default(),
-            #[cfg(not(feature = "rapier"))]
+            #[cfg(not(feature = "bevy_rapier2d"))]
             mass: 1.0.into(),
-            #[cfg(feature = "rapier")]
+            #[cfg(feature = "bevy_rapier2d")]
             mass: AdditionalMassProperties::Mass(500.0),
             velocity: Default::default(),
             damping: Default::default(),
-            #[cfg(feature = "rapier")]
+            #[cfg(feature = "bevy_rapier2d")]
             rigid_body: RigidBody::Dynamic,
         }
     }
