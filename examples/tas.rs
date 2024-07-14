@@ -66,20 +66,21 @@ fn spawn(
     mut atlases: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
 ) {
-    commands
-        .spawn(SpriteSheetBundle {
-            atlas: TextureAtlas {
-                layout: atlases.add(TextureAtlasLayout::from_grid(
-                    Vec2::splat(64.),
-                    1,
-                    4,
-                    None,
-                    None,
-                )),
-                index: 2,
-            },
+    commands.spawn((
+        TextureAtlas {
+            layout: atlases.add(TextureAtlasLayout::from_grid(
+                UVec2::splat(64),
+                1,
+                4,
+                None,
+                None,
+            )),
+            index: 2,
+        },
+        SpriteBundle {
             texture: asset_server.load("asteroid_sheet_test.png"),
             ..default()
-        })
-        .insert(Marker);
+        },
+        Marker,
+    ));
 }
