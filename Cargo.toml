@@ -13,28 +13,28 @@ repository = "https://github.com/bilowik/bevy_despawn_particles"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy_sprite = "0.14.0"     
-bevy_pbr = "0.14.0"        
-bevy_ecs = "0.14.0"        
-bevy_math = "0.14.0"       
-bevy_reflect = "0.14.0"    
-bevy_time = "0.14.0"       
-bevy_app = "0.14.0"        
-bevy_render = "0.14.0"     
-bevy_asset = "0.14.0"      
-bevy_hierarchy = "0.14.0"  
-bevy_log = "0.14.0"        
-bevy_transform = "0.14.0"  
+bevy_sprite = "0.15.0"     
+bevy_pbr = "0.15.0"        
+bevy_ecs = "0.15.0"        
+bevy_math = "0.15.0"       
+bevy_reflect = "0.15.0"    
+bevy_time = "0.15.0"       
+bevy_app = "0.15.0"        
+bevy_render = "0.15.0"     
+bevy_asset = "0.15.0"      
+bevy_hierarchy = "0.15.0"  
+bevy_log = "0.15.0"        
+bevy_transform = "0.15.0"  
 rand = "0.8.5"
-bevy_rapier2d = { version = "0.27.0", optional = true }
-bevy_variable_property = "0.1.0"
+bevy_rapier2d = { version = "0.28.0", optional = true }
+bevy_variable_property = "0.2.0"
 smallvec = { version = "1.11.0", features = ["const_generics"] }
 thiserror = "1.0.43"
-bevy_color = "0.14.0"
+bevy_color = "0.15.0"
 
 [features]
 bevy_rapier2d = ["dep:bevy_rapier2d"]
 
 
 [dev-dependencies]
-bevy = "0.14.0"
+bevy = "0.15.0"
