@@ -25,7 +25,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     spawn(commands, asset_server);
 }
 
@@ -63,10 +63,7 @@ fn tick(
 
 fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
-        SpriteBundle {
-            texture: asset_server.load("asteroid_round.png"),
-            ..default()
-        },
+        Sprite::from_image(asset_server.load("asteroid_round.png")),
         Marker,
     ));
 }

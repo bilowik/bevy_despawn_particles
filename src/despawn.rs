@@ -1,8 +1,8 @@
 use bevy_asset::{Asset, Handle};
+use bevy_image::Image;
 use bevy_math::Vec2;
 use bevy_reflect::Reflect;
 use bevy_render::render_resource::{AsBindGroup, ShaderRef};
-use bevy_render::texture::Image;
 use bevy_sprite::Material2d;
 
 // Needed for AsBindGroup derive macro since it expects the bevy crate.

@@ -26,7 +26,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     spawn(commands, atlases, asset_server);
 }
 
@@ -67,20 +67,21 @@ fn spawn(
     asset_server: Res<AssetServer>,
 ) {
     commands.spawn((
-        TextureAtlas {
-            layout: atlases.add(TextureAtlasLayout::from_grid(
-                UVec2::splat(64),
-                1,
-                4,
-                None,
-                None,
-            )),
-            index: 2,
-        },
-        SpriteBundle {
-            texture: asset_server.load("asteroid_sheet_test.png"),
+        Sprite {
+            image: asset_server.load("asteroid_sheet_test.png"),
+            texture_atlas: Some(TextureAtlas {
+                layout: atlases.add(TextureAtlasLayout::from_grid(
+                    UVec2::splat(64),
+                    1,
+                    4,
+                    None,
+                    None,
+                )),
+                index: 2,
+            }),
             ..default()
         },
+        Transform::default(),
         Marker,
     ));
 }

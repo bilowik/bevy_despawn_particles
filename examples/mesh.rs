@@ -29,7 +29,7 @@ fn setup(
     color_materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
 ) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     spawn_meshes(commands, color_materials, meshes);
 }
 
@@ -72,54 +72,47 @@ fn spawn_meshes(
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    commands
-        .spawn(ColorMesh2dBundle {
-            material: color_materials.add(ColorMaterial::from(Color::srgba(0.0, 0.0, 1.0, 0.5))),
-            mesh: meshes.add(Mesh::from(RegularPolygon::new(128.0, 3))).into(),
-            transform: Transform {
-                translation: Vec3::new(-320.0, 0.0, 0.0),
-                ..default()
-            },
+    commands.spawn((
+        MeshMaterial2d(color_materials.add(ColorMaterial::from(Color::srgba(0.0, 0.0, 1.0, 0.5)))),
+        Mesh2d(meshes.add(Mesh::from(RegularPolygon::new(128.0, 3)))),
+        Transform {
+            translation: Vec3::new(-320.0, 0.0, 0.0),
             ..default()
-        })
-        .insert(Marker);
-    commands
-        .spawn(ColorMesh2dBundle {
-            material: color_materials.add(ColorMaterial::from(Color::from(BLUE))),
-            mesh: meshes
-                .add(Mesh::from(Rectangle::new(
-                    128.0 * 2.0f32.sqrt(),
-                    128.0 * 2.0f32.sqrt(),
-                )))
-                .into(),
-            transform: Transform {
-                translation: Vec3::new(320.0, 0.0, 0.0),
-                ..default()
-            },
+        },
+        Marker,
+    ));
+
+    commands.spawn((
+        MeshMaterial2d(color_materials.add(ColorMaterial::from(Color::from(BLUE)))),
+        Mesh2d(meshes.add(Mesh::from(Rectangle::new(
+            128.0 * 2.0f32.sqrt(),
+            128.0 * 2.0f32.sqrt(),
+        )))),
+        Transform {
+            translation: Vec3::new(320.0, 0.0, 0.0),
             ..default()
-        })
-        .insert(Marker);
-    commands
-        .spawn(ColorMesh2dBundle {
-            transform: Transform {
-                translation: Vec3::new(0.0, -192.0, 0.0),
-                ..default()
-            },
-            material: color_materials.add(ColorMaterial::from(Color::from(BLUE))),
-            mesh: meshes.add(Mesh::from(Circle::new(128.0))).into(),
+        },
+        Marker,
+    ));
+
+    commands.spawn((
+        Transform {
+            translation: Vec3::new(0.0, -192.0, 0.0),
             ..default()
-        })
-        .insert(Marker);
-    commands
-        .spawn(ColorMesh2dBundle {
-            transform: Transform {
-                translation: Vec3::new(0.0, 192.0, 0.0),
-                ..default()
-            },
-            material: color_materials.add(ColorMaterial::from(Color::from(BLUE))),
-            mesh: meshes.add(Mesh::from(Circle::new(128.0))).into(),
+        },
+        MeshMaterial2d(color_materials.add(ColorMaterial::from(Color::from(BLUE)))),
+        Mesh2d(meshes.add(Mesh::from(Circle::new(128.0)))),
+        Marker,
+    ));
+
+    commands.spawn((
+        Transform {
+            translation: Vec3::new(0.0, 192.0, 0.0),
             ..default()
-        })
-        .insert(DespawnMeshOverride::faux_circle(&mut meshes, 128.0, 13))
-        .insert(Marker);
+        },
+        MeshMaterial2d(color_materials.add(ColorMaterial::from(Color::from(BLUE)))),
+        Mesh2d(meshes.add(Mesh::from(Circle::new(128.0)))),
+        Marker,
+        DespawnMeshOverride::faux_circle(&mut meshes, 128.0, 13),
+    ));
 }
