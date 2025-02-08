@@ -39,7 +39,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     spawn(
         commands,
         asset_server,
@@ -87,15 +87,13 @@ fn tick(
 }
 
 fn spawn(mut commands: Commands, asset_server: Res<AssetServer>, size: Vec2, scale: Vec3) {
-    commands
-        .spawn(SpriteBundle {
-            transform: Transform { scale, ..default() },
-            texture: asset_server.load("asteroid_round.png"),
-            sprite: Sprite {
-                custom_size: Some(size),
-                ..default()
-            },
+    commands.spawn((
+        Transform { scale, ..default() },
+        Sprite {
+            image: asset_server.load("asteroid_round.png"),
+            custom_size: Some(size),
             ..default()
-        })
-        .insert(Marker);
+        },
+        Marker,
+    ));
 }

@@ -22,13 +22,11 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(Camera2dBundle::default());
-    commands
-        .spawn(SpriteBundle {
-            texture: asset_server.load("asteroid_round.png"),
-            ..default()
-        })
-        .insert(Marker);
+    commands.spawn(Camera2d::default());
+    commands.spawn((
+        Sprite::from_image(asset_server.load("asteroid_round.png")),
+        Marker,
+    ));
 }
 
 fn tick(
@@ -58,12 +56,10 @@ fn tick(
             timer.0 = Timer::from_seconds(1.2, TimerMode::Once);
             timer.0.reset();
         } else {
-            commands
-                .spawn(SpriteBundle {
-                    texture: asset_server.load("asteroid_round.png"),
-                    ..default()
-                })
-                .insert(Marker);
+            commands.spawn((
+                Sprite::from_image(asset_server.load("asteroid_round.png")),
+                Marker,
+            ));
             timer.0 = Timer::from_seconds(0.5, TimerMode::Once);
         }
     }

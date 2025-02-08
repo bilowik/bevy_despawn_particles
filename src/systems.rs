@@ -8,18 +8,22 @@ use bevy_ecs::{
 };
 use bevy_math::{primitives::Rectangle, Vec2};
 
-use bevy_render::{mesh::Mesh, render_asset::RenderAssetUsages, texture::Image};
 use bevy_render::{
     mesh::{Indices, VertexAttributeValues},
-    prelude::SpatialBundle, // Is this the only place it is publicly available?
+    prelude::Visibility,
     render_resource::PrimitiveTopology,
 };
-use bevy_sprite::Mesh2dHandle;
+use bevy_render::{
+    mesh::{Mesh, Mesh2d},
+    render_asset::RenderAssetUsages,
+};
+use bevy_sprite::MeshMaterial2d;
 
 use bevy_hierarchy::DespawnRecursiveExt;
+use bevy_image::Image;
 use bevy_log::{error, warn};
 use bevy_math::Vec3;
-use bevy_sprite::{ColorMaterial, Sprite, TextureAtlas, TextureAtlasLayout};
+use bevy_sprite::{ColorMaterial, Sprite, TextureAtlasLayout};
 use bevy_time::Time;
 use bevy_transform::components::{GlobalTransform, Transform};
 
@@ -107,8 +111,8 @@ fn handle_despawn_particles_event(
     atlas_layouts: &Assets<TextureAtlasLayout>,
     global_transforms: &Query<&GlobalTransform>,
     despawn_materials: &mut Assets<DespawnMaterial>,
-    sprites: &Query<(&Sprite, &Handle<Image>, Option<&TextureAtlas>)>,
-    mesh_components: &Query<(&Mesh2dHandle, Option<&Handle<ColorMaterial>>)>,
+    sprites: &Query<&Sprite>,
+    mesh_components: &Query<(&Mesh2d, Option<&MeshMaterial2d<ColorMaterial>>)>,
     color_materials: &mut Assets<ColorMaterial>,
     no_death_animations: &Query<&NoDespawnAnimation>,
     velocities: &Query<&Velocity>,
@@ -166,61 +170,63 @@ fn handle_despawn_particles_event(
             return Ok(());
         }
 
-        let (mesh_handle, maybe_image_params, maybe_color_material) =
-            if let Ok((sprite, image_handle, maybe_texture_atlas)) = sprites.get(*entity) {
-                let image_size = images
-                    .get(image_handle)
-                    .and_then(|image| Some(image.size().as_vec2()))
-                    .ok_or(DespawnParticlesError::InvalidImageHandle)?;
+        let (mesh_handle, maybe_image_params, maybe_color_material) = if let Ok(sprite) =
+            sprites.get(*entity)
+        {
+            let image_handle = &sprite.image;
+            let maybe_texture_atlas = (&sprite.texture_atlas).as_ref();
+            let image_size = images
+                .get(image_handle)
+                .and_then(|image| Some(image.size().as_vec2()))
+                .ok_or(DespawnParticlesError::InvalidImageHandle)?;
 
-                // Get input_size and offset from atlas if it exists, else default to
-                // no offset and the full images size.
-                let (input_size, offset) = maybe_texture_atlas
-                    .and_then(|atlas| atlas.texture_rect(&atlas_layouts))
-                    .map(|rect| {
-                        (
-                            Vec2::new(rect.width() as f32, rect.height() as f32),
-                            rect.min.as_vec2(),
-                        )
-                    })
-                    .unwrap_or((image_size, Vec2::ZERO));
+            // Get input_size and offset from atlas if it exists, else default to
+            // no offset and the full images size.
+            let (input_size, offset) = maybe_texture_atlas
+                .and_then(|atlas| atlas.texture_rect(&atlas_layouts))
+                .map(|rect| {
+                    (
+                        Vec2::new(rect.width() as f32, rect.height() as f32),
+                        rect.min.as_vec2(),
+                    )
+                })
+                .unwrap_or((image_size, Vec2::ZERO));
 
-                let mesh = Rectangle::new(input_size.x, input_size.y);
+            let mesh = Rectangle::new(input_size.x, input_size.y);
 
-                (
-                    meshes.add(mesh).into(),
-                    Some(ImageParams {
-                        offset,
-                        image_handle: image_handle.clone(),
-                        input_size,
-                        texture_size: image_size,
-                        custom_size: sprite.custom_size,
-                    }),
-                    None,
-                )
-            } else if let Ok((mesh_handle, maybe_color_material)) = mesh_components.get(*entity) {
-                let base_color = maybe_color_material
-                    .and_then(|handle| color_materials.get(handle))
-                    .and_then(|material| Some(material.color))
-                    .unwrap_or(GRAY.into());
-                let final_color = if gray == 1 {
-                    let linear_color = base_color.to_linear();
-                    let mixed_shade = linear_color.red * 0.299
-                        + linear_color.green * 0.587
-                        + linear_color.blue * 0.114;
-                    LinearRgba::new(mixed_shade, mixed_shade, mixed_shade, linear_color.alpha)
-                        .into()
-                } else {
-                    base_color
-                };
-                (
-                    mesh_handle.clone(),
-                    None,
-                    Some(color_materials.add(ColorMaterial::from(final_color))),
-                )
+            (
+                meshes.add(mesh).into(),
+                Some(ImageParams {
+                    offset,
+                    image_handle: image_handle.clone(),
+                    input_size,
+                    texture_size: image_size,
+                    custom_size: sprite.custom_size,
+                }),
+                None,
+            )
+        } else if let Ok((mesh_handle, maybe_color_material)) = mesh_components.get(*entity) {
+            let base_color = maybe_color_material
+                .and_then(|handle| color_materials.get(handle))
+                .and_then(|material| Some(material.color))
+                .unwrap_or(GRAY.into());
+            let final_color = if gray == 1 {
+                let linear_color = base_color.to_linear();
+                let mixed_shade = linear_color.red * 0.299
+                    + linear_color.green * 0.587
+                    + linear_color.blue * 0.114;
+                LinearRgba::new(mixed_shade, mixed_shade, mixed_shade, linear_color.alpha).into()
             } else {
-                return Err(DespawnParticlesError::EntityMissingComponents);
+                base_color
             };
+            (
+                mesh_handle.clone(),
+                None,
+                Some(color_materials.add(ColorMaterial::from(final_color))),
+            )
+        } else {
+            return Err(DespawnParticlesError::EntityMissingComponents);
+        };
 
         // Find which mesh to use.
         let mesh_handle = event_mesh_override
@@ -369,11 +375,9 @@ fn handle_despawn_particles_event(
                         mass: AdditionalMassProperties::Mass(mass.get_value()),
                         ..Default::default()
                     },
-                    Mesh2dHandle::from(meshes.add(mesh)),
-                    SpatialBundle {
-                        transform: particle_transform,
-                        ..Default::default()
-                    },
+                    Mesh2d::from(meshes.add(mesh)),
+                    particle_transform,
+                    Visibility::default(),
                 ));
 
                 if let Some(image_params) = maybe_image_params.as_ref() {
@@ -386,10 +390,10 @@ fn handle_despawn_particles_event(
                         gray,
                         padding: 0,
                     });
-                    entity_cmds.insert(material);
+                    entity_cmds.insert(MeshMaterial2d(material));
                 } else if let Some(color_material_handle) = maybe_color_material.clone() {
                     // We have no texture, just use color materials
-                    entity_cmds.insert(color_material_handle.clone());
+                    entity_cmds.insert(MeshMaterial2d(color_material_handle.clone()));
                     entity_cmds.insert(OriginalAlpha(
                         color_materials
                             .get(&color_material_handle)
@@ -416,8 +420,8 @@ pub(crate) fn handle_despawn_particles_events(
     atlas_layouts: Res<Assets<TextureAtlasLayout>>,
     global_transforms: Query<&GlobalTransform>,
     mut despawn_materials: ResMut<Assets<DespawnMaterial>>,
-    sprites: Query<(&Sprite, &Handle<Image>, Option<&TextureAtlas>)>,
-    mesh_components: Query<(&Mesh2dHandle, Option<&Handle<ColorMaterial>>)>,
+    sprites: Query<&Sprite>,
+    mesh_components: Query<(&Mesh2d, Option<&MeshMaterial2d<ColorMaterial>>)>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut despawn_particles_event_reader: EventReader<DespawnParticlesEvent>,
     no_death_animations: Query<&NoDespawnAnimation>,
@@ -453,8 +457,8 @@ pub(crate) fn handle_despawn_particle(
     mut despawn_particles: Query<(
         Entity,
         AnyOf<(
-            &Handle<DespawnMaterial>,
-            (&Handle<ColorMaterial>, &OriginalAlpha),
+            &MeshMaterial2d<DespawnMaterial>,
+            (&MeshMaterial2d<ColorMaterial>, &OriginalAlpha),
         )>,
         &mut DespawnParticle,
         &mut Transform,

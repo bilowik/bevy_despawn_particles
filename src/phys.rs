@@ -79,8 +79,8 @@ pub(crate) fn phys_tick(
 ) {
     phys_timer.timer.tick(time.delta());
     if phys_timer.timer.just_finished() {
-        let elapsed = time.elapsed_seconds() - phys_timer.last_run;
-        phys_timer.last_run = time.elapsed_seconds();
+        let elapsed = time.elapsed_secs() - phys_timer.last_run;
+        phys_timer.last_run = time.elapsed_secs();
         query.par_iter_mut().for_each(|(mut t, mut v, d, m)| {
             v.linvel *= 1.0 / (1.0 + (elapsed * d.linear_damping));
             v.angvel *= 1.0 / (1.0 + (elapsed * d.angular_damping));
