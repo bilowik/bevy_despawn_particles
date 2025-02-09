@@ -75,7 +75,9 @@ impl Plugin for DespawnParticlesPlugin {
 
         #[cfg(feature = "bevy_rapier2d")]
         {
-            app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0));
+            if !app.is_plugin_added::<RapierPhysicsPlugin>() {
+                app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0));
+            }
         }
     }
 }
