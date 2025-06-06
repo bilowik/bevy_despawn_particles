@@ -1,3 +1,4 @@
+// TODO: Remove recurse arg
 use bevy_asset::{Assets, Handle};
 use bevy_color::{palettes::basic::GRAY, Alpha, LinearRgba};
 use bevy_ecs::{
@@ -156,12 +157,8 @@ fn handle_despawn_particles_event(
         |_entity_cmds: &mut EntityCommands| {}
     };
 
-    if let Some(mut entity_commands) = commands.get_entity(*entity) {
-        if *recurse {
-            entity_commands.despawn_recursive();
-        } else {
-            entity_commands.despawn();
-        }
+    if let Ok(mut entity_commands) = commands.get_entity(*entity) {
+        entity_commands.despawn();
         // Now spawn the death animation, if possible
         if no_death_animations.get(*entity).is_ok() {
             // We ignore death animations for this object.
@@ -479,7 +476,7 @@ pub(crate) fn handle_despawn_particle(
     {
         despawn_particle.lifetime.tick(time.delta());
         if despawn_particle.lifetime.finished() {
-            if let Some(mut entity_commands) = commands.get_entity(entity) {
+            if let Ok(mut entity_commands) = commands.get_entity(entity) {
                 entity_commands.despawn();
             }
         }
@@ -523,7 +520,7 @@ pub fn max_particles_check(
                     None
                 }
             })
-            .and_then(|curr_entity| commands.get_entity(curr_entity))
+            .and_then(|curr_entity| commands.get_entity(curr_entity).ok())
             .and_then(|mut entity_cmds| {
                 entity_cmds.despawn();
                 Some(())
