@@ -17,13 +17,11 @@ use bevy_render::{
     mesh::{Mesh, Mesh2d},
     render_asset::RenderAssetUsages,
 };
-use bevy_sprite::MeshMaterial2d;
 
-use bevy_hierarchy::DespawnRecursiveExt;
-use bevy_image::Image;
+use bevy_image::{Image, TextureAtlasLayout};
 use bevy_log::{error, warn};
 use bevy_math::Vec3;
-use bevy_sprite::{ColorMaterial, Sprite, TextureAtlasLayout};
+use bevy_sprite::{ColorMaterial, MeshMaterial2d, Sprite};
 use bevy_time::Time;
 use bevy_transform::components::{GlobalTransform, Transform};
 
