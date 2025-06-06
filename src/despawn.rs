@@ -5,13 +5,6 @@ use bevy_reflect::Reflect;
 use bevy_render::render_resource::{AsBindGroup, ShaderRef};
 use bevy_sprite::{AlphaMode2d, Material2d};
 
-// Needed for AsBindGroup derive macro since it expects the bevy crate.
-mod bevy {
-    pub mod render {
-        pub use bevy_render::*;
-    }
-}
-
 #[derive(AsBindGroup, Clone, Reflect, Asset)]
 pub struct DespawnMaterial {
     #[texture(0)]

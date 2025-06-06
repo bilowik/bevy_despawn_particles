@@ -17,13 +17,11 @@ use bevy_render::{
     mesh::{Mesh, Mesh2d},
     render_asset::RenderAssetUsages,
 };
-use bevy_sprite::MeshMaterial2d;
 
-use bevy_hierarchy::DespawnRecursiveExt;
-use bevy_image::Image;
+use bevy_image::{Image, TextureAtlasLayout};
 use bevy_log::{error, warn};
 use bevy_math::Vec3;
-use bevy_sprite::{ColorMaterial, Sprite, TextureAtlasLayout};
+use bevy_sprite::{ColorMaterial, MeshMaterial2d, Sprite};
 use bevy_time::Time;
 use bevy_transform::components::{GlobalTransform, Transform};
 
@@ -134,7 +132,6 @@ fn handle_despawn_particles_event(
         mesh_override: event_mesh_override,
         target_num_particles,
         gray,
-        recurse,
     } = event;
     let target_num_particles = target_num_particles.get_value();
 
@@ -158,12 +155,8 @@ fn handle_despawn_particles_event(
         |_entity_cmds: &mut EntityCommands| {}
     };
 
-    if let Some(mut entity_commands) = commands.get_entity(*entity) {
-        if *recurse {
-            entity_commands.despawn_recursive();
-        } else {
-            entity_commands.despawn();
-        }
+    if let Ok(mut entity_commands) = commands.get_entity(*entity) {
+        entity_commands.despawn();
         // Now spawn the death animation, if possible
         if no_death_animations.get(*entity).is_ok() {
             // We ignore death animations for this object.
@@ -481,7 +474,7 @@ pub(crate) fn handle_despawn_particle(
     {
         despawn_particle.lifetime.tick(time.delta());
         if despawn_particle.lifetime.finished() {
-            if let Some(mut entity_commands) = commands.get_entity(entity) {
+            if let Ok(mut entity_commands) = commands.get_entity(entity) {
                 entity_commands.despawn();
             }
         }
@@ -525,7 +518,7 @@ pub fn max_particles_check(
                     None
                 }
             })
-            .and_then(|curr_entity| commands.get_entity(curr_entity))
+            .and_then(|curr_entity| commands.get_entity(curr_entity).ok())
             .and_then(|mut entity_cmds| {
                 entity_cmds.despawn();
                 Some(())

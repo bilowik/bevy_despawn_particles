@@ -1,7 +1,8 @@
 use bevy_ecs::{
     component::Component,
     reflect::ReflectComponent,
-    system::{Local, Query, Res, Resource},
+    resource::Resource,
+    system::{Local, Query, Res},
 };
 use bevy_reflect::Reflect;
 use bevy_time::{Time, Timer, TimerMode};
