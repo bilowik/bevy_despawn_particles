@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 use bevy_app::{App, Plugin, Startup, Update};
-use bevy_ecs::schedule::{IntoSystemConfigs, SystemSet};
+use bevy_ecs::schedule::{IntoScheduleConfigs, SystemSet};
 
 use bevy_sprite::Material2dPlugin;
 
