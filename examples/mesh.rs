@@ -46,7 +46,7 @@ fn tick(
     if timer.0.just_finished() {
         if !marker.is_empty() {
             for entity in marker.iter() {
-                despawn_particles_event_writer.send(
+                despawn_particles_event_writer.write(
                     DespawnParticlesEvent::builder()
                         .with_fade(false)
                         .with_shrink(false)

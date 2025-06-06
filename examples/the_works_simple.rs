@@ -27,8 +27,8 @@ fn despawn(
     mut despawn_particles_event_writer: EventWriter<DespawnParticlesEvent>,
     entities: Query<Entity, Added<Marker>>,
 ) {
-    if let Ok(entity) = entities.get_single() {
-        despawn_particles_event_writer.send(
+    if let Ok(entity) = entities.single() {
+        despawn_particles_event_writer.write(
             DespawnParticlesEvent::builder()
                 .with_fade(true)
                 .with_shrink(true)
