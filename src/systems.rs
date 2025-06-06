@@ -1,4 +1,3 @@
-// TODO: Remove recurse arg
 use bevy_asset::{Assets, Handle};
 use bevy_color::{palettes::basic::GRAY, Alpha, LinearRgba};
 use bevy_ecs::{
@@ -133,7 +132,6 @@ fn handle_despawn_particles_event(
         mesh_override: event_mesh_override,
         target_num_particles,
         gray,
-        recurse,
     } = event;
     let target_num_particles = target_num_particles.get_value();
 
