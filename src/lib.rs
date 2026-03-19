@@ -2,7 +2,7 @@
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::schedule::{IntoScheduleConfigs, SystemSet};
 
-use bevy_sprite::Material2dPlugin;
+use bevy_sprite_render::Material2dPlugin;
 
 #[cfg(feature = "bevy_rapier2d")]
 use bevy_rapier2d::prelude::*;
@@ -52,7 +52,7 @@ impl Plugin for DespawnParticlesPlugin {
             .register_type::<DespawnMaterial>();
 
         // Register events
-        app.add_event::<DespawnParticlesEvent>();
+        app.add_message::<DespawnParticlesEvent>();
 
         // Register systems and systemset
         // TODO: These might need to be ordered to prevent conflicts potentially?

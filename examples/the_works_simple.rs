@@ -24,7 +24,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn despawn(
-    mut despawn_particles_event_writer: EventWriter<DespawnParticlesEvent>,
+    mut despawn_particles_event_writer: MessageWriter<DespawnParticlesEvent>,
     entities: Query<Entity, Added<Marker>>,
 ) {
     if let Ok(entity) = entities.single() {

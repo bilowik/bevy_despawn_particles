@@ -1,27 +1,24 @@
+use bevy_asset::RenderAssetUsages;
 use bevy_asset::{Assets, Handle};
+use bevy_camera::visibility::Visibility;
 use bevy_color::{palettes::basic::GRAY, Alpha, LinearRgba};
 use bevy_ecs::{
     entity::Entity,
-    event::EventReader,
+    message::MessageReader,
     query::AnyOf,
     system::{Commands, EntityCommands, Query, Res, ResMut},
 };
 use bevy_math::{primitives::Rectangle, Vec2};
+use bevy_mesh::{Indices, VertexAttributeValues};
 
-use bevy_render::{
-    mesh::{Indices, VertexAttributeValues},
-    prelude::Visibility,
-    render_resource::PrimitiveTopology,
-};
-use bevy_render::{
-    mesh::{Mesh, Mesh2d},
-    render_asset::RenderAssetUsages,
-};
+use bevy_mesh::{Mesh, Mesh2d};
+use bevy_render::render_resource::PrimitiveTopology;
 
 use bevy_image::{Image, TextureAtlasLayout};
 use bevy_log::{error, warn};
 use bevy_math::Vec3;
-use bevy_sprite::{ColorMaterial, MeshMaterial2d, Sprite};
+use bevy_sprite::Sprite;
+use bevy_sprite_render::{ColorMaterial, MeshMaterial2d};
 use bevy_time::Time;
 use bevy_transform::components::{GlobalTransform, Transform};
 
@@ -416,7 +413,7 @@ pub(crate) fn handle_despawn_particles_events(
     sprites: Query<&Sprite>,
     mesh_components: Query<(&Mesh2d, Option<&MeshMaterial2d<ColorMaterial>>)>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
-    mut despawn_particles_event_reader: EventReader<DespawnParticlesEvent>,
+    mut despawn_particles_event_reader: MessageReader<DespawnParticlesEvent>,
     no_death_animations: Query<&NoDespawnAnimation>,
     velocities: Query<&Velocity>,
     despawn_mesh_overrides: Query<&DespawnMeshOverride>,
@@ -473,7 +470,7 @@ pub(crate) fn handle_despawn_particle(
     ) in despawn_particles.iter_mut()
     {
         despawn_particle.lifetime.tick(time.delta());
-        if despawn_particle.lifetime.finished() {
+        if despawn_particle.lifetime.is_finished() {
             if let Ok(mut entity_commands) = commands.get_entity(entity) {
                 entity_commands.despawn();
             }

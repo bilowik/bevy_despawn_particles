@@ -36,7 +36,7 @@ fn setup(
 fn tick(
     mut timer: Local<MyTimer>,
     time: Res<Time>,
-    mut despawn_particles_event_writer: EventWriter<DespawnParticlesEvent>,
+    mut despawn_particles_event_writer: MessageWriter<DespawnParticlesEvent>,
     commands: Commands,
     color_materials: ResMut<Assets<ColorMaterial>>,
     meshes: ResMut<Assets<Mesh>>,

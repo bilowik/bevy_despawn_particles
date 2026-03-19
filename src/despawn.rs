@@ -2,8 +2,9 @@ use bevy_asset::{Asset, Handle};
 use bevy_image::Image;
 use bevy_math::Vec2;
 use bevy_reflect::Reflect;
-use bevy_render::render_resource::{AsBindGroup, ShaderRef};
-use bevy_sprite::{AlphaMode2d, Material2d};
+use bevy_render::render_resource::AsBindGroup;
+use bevy_shader::ShaderRef;
+use bevy_sprite_render::{AlphaMode2d, Material2d};
 
 #[derive(AsBindGroup, Clone, Reflect, Asset)]
 pub struct DespawnMaterial {
