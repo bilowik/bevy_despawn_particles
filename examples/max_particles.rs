@@ -32,7 +32,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn tick(
     mut timer: Local<MyTimer>,
     time: Res<Time>,
-    mut despawn_particles_event_writer: EventWriter<DespawnParticlesEvent>,
+    mut despawn_particles_event_writer: MessageWriter<DespawnParticlesEvent>,
     commands: Commands,
     marker: Query<Entity, With<Marker>>,
     asset_server: Res<AssetServer>,

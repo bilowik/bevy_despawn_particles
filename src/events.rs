@@ -1,8 +1,8 @@
 //! Event and related utilities for triggering despawn particles events
-use bevy_ecs::{entity::Entity, event::Event};
+use bevy_ecs::{entity::Entity, message::Message};
 
 use bevy_asset::Handle;
-use bevy_render::mesh::Mesh;
+use bevy_mesh::Mesh;
 
 use bevy_math::Vec2;
 
@@ -35,7 +35,7 @@ impl DespawnParticlesPreset {
 ///
 /// Each of the given properties is applied to each of the generated
 /// [DespawnParticles][crate::components::DespawnParticle].
-#[derive(Clone, Event)]
+#[derive(Clone, Message)]
 pub struct DespawnParticlesEvent {
     /// The target entity
     pub entity: Entity,

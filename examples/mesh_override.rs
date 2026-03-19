@@ -31,7 +31,7 @@ fn setup(mut commands: Commands, meshes: ResMut<Assets<Mesh>>, asset_server: Res
 fn tick(
     mut timer: Local<MyTimer>,
     time: Res<Time>,
-    mut despawn_particles_event_writer: EventWriter<DespawnParticlesEvent>,
+    mut despawn_particles_event_writer: MessageWriter<DespawnParticlesEvent>,
     commands: Commands,
     meshes: ResMut<Assets<Mesh>>,
     marker: Query<Entity, With<Marker>>,
