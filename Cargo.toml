@@ -33,6 +33,7 @@ thiserror = "1.0.43"
 bevy_color = "0.17.0"
 bevy_mesh = "0.17.0"
 bevy_sprite_render = "0.17.0"
+bevy_camera = "0.17.0"
 
 [features]
 bevy_rapier2d = ["dep:bevy_rapier2d"]
