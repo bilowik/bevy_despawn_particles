@@ -476,12 +476,12 @@ pub(crate) fn handle_despawn_particle(
             }
         }
         let percent = despawn_particle.lifetime.fraction_remaining();
-        if let Some(despawn_material) = maybe_fade
+        if let Some(mut despawn_material) = maybe_fade
             .and_then(|_| maybe_despawn_material_handle)
             .and_then(|handle| despawn_materials.get_mut(handle))
         {
             despawn_material.alpha = percent;
-        } else if let Some((color_material, original_alpha)) = maybe_color_material_handle_and_alpha
+        } else if let Some((mut color_material, original_alpha)) = maybe_color_material_handle_and_alpha
             .and_then(|(handle, a)| color_materials.get_mut(handle).zip(Some(a)))
         {
             let orig_color = color_material.color.to_linear();
